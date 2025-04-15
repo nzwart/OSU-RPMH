@@ -2,3 +2,8 @@
 Cargo.lock
 target/
 .DS_store
+
+
+# Added by cargo
+
+/target

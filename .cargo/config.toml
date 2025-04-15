@@ -1,0 +1,26 @@
+# This section defines settings that apply specifically to ARM targets that don't use an operating system
+# In other words, this applies to "bare-metal" MCUs like the RP2040, the chip on our RPP
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+
+# These are flags passed to the Rust compiler for linking
+rustflags = [
+    # "--nmagic" disables automatic section alignment, 
+    # which is important for microcontrollers with strict memory constraints
+    "-C",
+    "link-arg=--nmagic",
+
+    # "-Tlink.x" tells the linker to use link.x as the linker script
+    # This is generated from memory.x and provides memory layout details
+    "-C",
+    "link-arg=-Tlink.x",
+]
+
+# The [build] section provides default build configuration
+[build]
+# This specifies the default compilation target
+# "thumbv6m-none-eabi" is for ARM Cortex-M0+ processors (which is what the RP2040 uses)
+# - "thumb" refers to the instruction set
+# - "v6m" is the architecture version
+# - "none" means no operating system
+# - "eabi" is the ABI (Application Binary Interface) standard
+# target = "thumbv6m-none-eabi" # todo: enable this once the desktop version is working on everyone's machines

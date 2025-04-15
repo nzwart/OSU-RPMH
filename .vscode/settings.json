@@ -1,0 +1,15 @@
+{
+    // Added because vscode was identifying memory.x as a C file and thus throwing syntax errors
+    // memory.x is actually a "linker" file required by the rp-pico crate
+    "files.associations": {
+        "memory.x": "plaintext"
+    },
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": true,
+        "markdown": true,
+        "scminput": false,
+        "yaml": false,
+        "c": false
+    }
+}
