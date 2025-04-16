@@ -2,7 +2,7 @@
 Cargo.lock
 target/
 .DS_store
-
+.idea
 
 # Added by cargo
 
