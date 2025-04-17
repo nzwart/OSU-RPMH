@@ -23,3 +23,5 @@ cargo run
 ```
 
 You may find your computer objects to your "unplugging" the usb device without ejecting.  This appears to be normal and unavoidable.  However, on an apple device, close that warning before attempting to download another build.  I think apple prevents a usb from being visible while that warning is on the screen.
+
+![Image of Raspberry Pi Pico board with pin connections](/docs/pico_pinout.jpg)
