@@ -16,12 +16,15 @@ To check this code to make sure it compiles:  navigate to the top level of the w
 
 ```cargo build```   (or ```cargo check```)
 
-To run it, you will plug your Pi Pico to the USB connection with your computer, holding the button on the Pi Pico down while plugging it in.  You will then be able to see the Pico as a USB device on your machine.  In your terminal, run:
+To run it, you will plug your Pi Pico to the USB connection with your computer, __holding the "boot selector" button on the Pi Pico down while plugging it in__.  You will then be able to see the Pico as a USB device on your machine.  In your terminal, run:
 
 ```bash
 cargo run
 ```
 
-You may find your computer objects to your "unplugging" the usb device without ejecting.  This appears to be normal and unavoidable.  However, on an apple device, close that warning before attempting to download another build.  I think apple prevents a usb from being visible while that warning is on the screen.
+You may find your computer generates an error popup, complaining that you "unplugged" the usb device without ejecting.  This appears to be normal and unavoidable. Once the executable transfers, the Pico ejects itself, reboots and runs the program. Nothing to worry about.  However, on an apple device, do make sure to close that warning before attempting to download another build.  I think apple prevents a usb from being visible while that warning is on the screen.
+
+**One additional note:** 
+Once you have loaded a program executable onto the Pico, you can re-run the program any time by plugging it into the computer USB without holding down the "boot selector" button.  The program will run automatically.
 
 ![Image of Raspberry Pi Pico board with pin connections](/docs/pico_pinout.jpg)
