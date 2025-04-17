@@ -53,15 +53,30 @@ fn main() -> ! {
 
     // Set the LED to be an output
     let mut led_pin = pins.led.into_push_pull_output();
+    // Set the GPIO 14, 15, 16 (Pico pins 19, 20, 21) to be an output
+    let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
+    let mut led_pin_red = pins.gpio15.into_push_pull_output();
+    let mut led_pin_green = pins.gpio16.into_push_pull_output();
 
 
     // TODO: our actual Pico code will go here
     // (LED blinking, sensor reading, etc.)
     loop {
-        // Blink the LED at 1 Hz
+        // Blink the LEDs at 1 Hz
         led_pin.set_high().unwrap();
         delay.delay_ms(500);
+        led_pin_green.set_high().unwrap();
+        delay.delay_ms(500);
+        led_pin_red.set_high().unwrap();
+        delay.delay_ms(500);
+        led_pin_yellow.set_high().unwrap();
+        delay.delay_ms(500);
+
+        // set all low
         led_pin.set_low().unwrap();
+        led_pin_green.set_low().unwrap();
+        led_pin_red.set_low().unwrap();
+        led_pin_yellow.set_low().unwrap();
         delay.delay_ms(500);
     }
 }
