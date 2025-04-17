@@ -22,4 +22,4 @@ SECTIONS{
 }
 > BOOT2
 }
-INSERT BEFORE.text;
+INSERT BEFORE .text;

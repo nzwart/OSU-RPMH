@@ -1,6 +1,7 @@
 # This section defines settings that apply specifically to ARM targets that don't use an operating system
 # In other words, this applies to "bare-metal" MCUs like the RP2040, the chip on our RPP
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = "elf2uf2-rs -d"
 
 # These are flags passed to the Rust compiler for linking
 rustflags = [
@@ -15,6 +16,7 @@ rustflags = [
     "link-arg=-Tlink.x",
 ]
 
+
 # The [build] section provides default build configuration
 [build]
 # This specifies the default compilation target
@@ -23,4 +25,4 @@ rustflags = [
 # - "v6m" is the architecture version
 # - "none" means no operating system
 # - "eabi" is the ABI (Application Binary Interface) standard
-# target = "thumbv6m-none-eabi" # todo: enable this once the desktop version is working on everyone's machines
+target = "thumbv6m-none-eabi" 
