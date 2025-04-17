@@ -5,16 +5,21 @@ Wiring the board:  The external leds have two wires: the long one is positive, t
  - Red to GPIO 15  (Pico pin 20)
  - Yellow to GPIO 14  (Pico pin 19)
  - Green to GPIO 16  (Pico pin 21)
+
+ - Ground (negative, blue) (Pico pins: 3, 8, 13, 18, 23, 28, 33, or 38)
  
  - Ground (negative, blue) (Pico pins: 3, 8, 13, 18, 23, 28, 33, or 38)
 
 To check and run this code, first pull the branch 'hello-leds' to your machine
  - In your (IDE) terminal, run ```git branch --all```.  You will see ```origin/hello-leds```
-  - Run ```git checkout hello-leds```
- 
-  - Make sure you have Rust installed in the directory ```rustc --version```
-     - if error appears, initialize Rust with ```curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh``` 
-         and then for BASH run ```. “$HOME/.cargo/env"```
+ - Run ```git checkout hello-leds```
+
+ - Make sure you have Rust installed in the directory ```rustc --version```
+    - if error appears, initialize Rust with ```curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh``` 
+        and then for BASH run ```. “$HOME/.cargo/env"```
+
+- Set the target for the RPP ```rustup target add thumbv6m-none-eabi```
+- Install cargo crate package dependencies ```cargo install elf2uf2-rs```
 
 To check this code to make sure it compiles:  navigate to the top level of the workdir after cloning the repo (OSU-RPMH) and run the following command:
 
