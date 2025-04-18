@@ -10,6 +10,14 @@ use rp_pico::hal;
 
 // HAL traits
 use embedded_hal::digital::OutputPin;
+use rp_pico::hal::fugit::RateExtU32;
+
+// use embedded_hal::i2c::Operation::Write;
+use rp_pico::hal::{
+    gpio::{FunctionI2C, Pin},
+};
+
+use cortex_m::prelude::_embedded_hal_blocking_i2c_Write;
 
 use panic_halt as _;
 
@@ -58,6 +66,24 @@ fn main() -> ! {
     let mut led_pin_red = pins.gpio15.into_push_pull_output();
     let mut led_pin_green = pins.gpio16.into_push_pull_output();
 
+    // Configure two pins as being I²C, not GPIO
+    let sda_pin: Pin<_, FunctionI2C, _> = pins.gpio18.reconfigure();
+    let scl_pin: Pin<_, FunctionI2C, _> = pins.gpio19.reconfigure();
+
+    // Create the I²C drive, using the two pre-configured pins. This will fail
+    // at compile time if the pins are in the wrong mode, or if this I²C
+    // peripheral isn't available on these pins!
+    let mut i2c = hal::I2C::i2c1(
+        peripherals.I2C1,
+        sda_pin,
+        scl_pin, // Try `not_an_scl_pin` here
+        400.kHz(),
+        &mut peripherals.RESETS,
+        &clocks.system_clock,
+    );
+
+    // Write three bytes to the I²C device with 7-bit address 0x2C
+    i2c.write(0x2Cu8, &[1, 2, 3]).unwrap();
 
     // TODO: our actual Pico code will go here
     // (LED blinking, sensor reading, etc.)
