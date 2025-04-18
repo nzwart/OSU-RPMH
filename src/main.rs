@@ -1,26 +1,83 @@
-// Import HAL crates (only used on Pico)
-// use rp_pico::hal::{self, pac};
-// todo: importing any additional needed hal crates for the RPP and getting a blinker going on there)
+// Compile without standard library
+#![no_std]
+#![no_main]
+
+// Import HAL crates
+use rp_pico::entry;
+use rp_pico::hal::prelude::*;
+use rp_pico::hal::pac;
+use rp_pico::hal;
+
+// HAL traits
+use embedded_hal::digital::OutputPin;
+
+use panic_halt as _;
 
 // Main entry point
-#[cfg(feature = "pico")]
-fn main() {
-    // Embedded Pico version of main -- only runs if we build for the Pico
-    use rp_pico::hal::{pac, prelude::*}; // todo: move this up later
-
+#[entry]
+fn main() -> ! { 
     // This is the Pico-specific setup
-    let _peripherals = pac::Peripherals::take().unwrap();
-    let _core = pac::CorePeripherals::take().unwrap();
+    let mut peripherals = pac::Peripherals::take().unwrap();
+    let core = pac::CorePeripherals::take().unwrap();
+
+    // Set up the watchdog driver - needed by the clock setup code
+    let mut watchdog = hal::Watchdog::new(peripherals.WATCHDOG);
+
+    // Configure the clocks
+    // (The default is to generate a 125 MHz system clock)
+    let clocks = hal::clocks::init_clocks_and_plls(
+        rp_pico::XOSC_CRYSTAL_FREQ,
+        peripherals.XOSC,
+        peripherals.CLOCKS,
+        peripherals.PLL_SYS,
+        peripherals.PLL_USB,
+        &mut peripherals.RESETS,
+        &mut watchdog,
+    )
+    .ok()
+    .unwrap();
+
+    // The delay object lets us wait for specified amounts of time (in milliseconds)
+    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
+
+    // The single-cycle I/O block controls our GPIO pins
+    let sio = hal::Sio::new(peripherals.SIO);
+
+    // Set the pins up according to their function on this particular board
+    let pins = rp_pico::Pins::new(
+        peripherals.IO_BANK0,
+        peripherals.PADS_BANK0,
+        sio.gpio_bank0,
+        &mut peripherals.RESETS,
+    );
+
+    // Set the LED to be an output
+    let mut led_pin = pins.led.into_push_pull_output();
+    // Set the GPIO 14, 15, 16 (Pico pins 19, 20, 21) to be an output
+    let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
+    let mut led_pin_red = pins.gpio15.into_push_pull_output();
+    let mut led_pin_green = pins.gpio16.into_push_pull_output();
+
 
     // TODO: our actual Pico code will go here
     // (LED blinking, sensor reading, etc.)
     loop {
-        // Blinking LEDs and sensor feedback and whatnot
+        // Blink the LEDs at 1 Hz
+        led_pin.set_high().unwrap();
+        delay.delay_ms(500);
+        led_pin_green.set_high().unwrap();
+        delay.delay_ms(500);
+        led_pin_red.set_high().unwrap();
+        delay.delay_ms(500);
+        led_pin_yellow.set_high().unwrap();
+        delay.delay_ms(500);
+
+        // set all low
+        led_pin.set_low().unwrap();
+        led_pin_green.set_low().unwrap();
+        led_pin_red.set_low().unwrap();
+        led_pin_yellow.set_low().unwrap();
+        delay.delay_ms(500);
     }
 }
 
-// Desktop code (default)
-#[cfg(feature = "desktop")]
-fn main() {
-    println!("Hello, Rust Humidity Sensor Team! This is the desktop test. If you see this message, that is a sign that your Rust installation is working.");
-}
