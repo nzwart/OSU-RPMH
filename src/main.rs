@@ -84,6 +84,7 @@ fn main() -> ! {
     // Create the I²C drive, using the two pre-configured pins. This will fail
     // at compile time if the pins are in the wrong mode, or if this I²C
     // peripheral isn't available on these pins!
+    /*  todo: put this back?
     let mut i2c = hal::I2C::i2c1(
         peripherals.I2C1,
         sda_pin,
@@ -92,9 +93,10 @@ fn main() -> ! {
         &mut peripherals.RESETS,
         &clocks.system_clock,
     );
+    */
 
     // Write three bytes to the I²C device with 7-bit address 0x2C
-    i2c.write(0x2Cu8, &[1, 2, 3]).unwrap();
+    // i2c.write(0x2Cu8, &[1, 2, 3]).unwrap();
 
     // ************* i2c code END ********************************************
     // ************* dht20 code BEGIN ******************************************
@@ -103,17 +105,35 @@ fn main() -> ! {
     // let mut delayy = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
     // let mut dht20 = Dht20::new(i2c);
     // let mut delayy = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-    let core2 = pac::CorePeripherals::take().unwrap();
+
+    // let core2 = pac::CorePeripherals::take().unwrap();  todo
+
+
+    led_pin_yellow.set_high().unwrap();
+
+
+    /*   todo:  put this back if needed
     let mut sensor = Dht20::new(
         i2c/*platform specific i2c driver*/,
         0x38,
-        cortex_m::delay::Delay::new(core2.SYST, clocks.system_clock.freq().to_Hz())/*platform specific delay*/,
+        cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz())/*platform specific delay*/,
     );
+    */
+
+    let mut sensor = Dht20::new(hal::I2C::i2c1(
+      peripherals.I2C1,
+      sda_pin,
+      scl_pin, // Try `not_an_scl_pin` here
+      400.kHz(),
+      &mut peripherals.RESETS,
+      &clocks.system_clock,
+  ), 0x38, delay);
+
     match sensor.read() {
         Ok(reading) => led_pin_green.set_high().unwrap(),
         // println!("Temp: {} °C, Hum: {} %",reading.temp, reading.hum),
         Err(e) => {
-            led_pin_err.set_high().unwrap();
+            led_pin_red.set_high().unwrap();
             // error!("Error reading sensor: {e:?}");
         }
     }
@@ -129,6 +149,7 @@ fn main() -> ! {
     // (LED blinking, sensor reading, etc.)
     loop {
         // Blink the LEDs at 1 Hz
+        /*   Comment these out now.  Having problems sharing "Delay"
         led_pin.set_high().unwrap();
         delay.delay_ms(500);
         led_pin_green.set_high().unwrap();
@@ -145,6 +166,7 @@ fn main() -> ! {
         led_pin_yellow.set_low().unwrap();
         delay.delay_ms(500);
         // delay.delay_ns(500);
+         */
     }
 }
 
