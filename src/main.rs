@@ -22,7 +22,7 @@ use rp_pico::hal::{
 use cortex_m::prelude::_embedded_hal_blocking_i2c_Write;
 // ************* i2c code END **************************************************
 // ************* dht20 code BEGIN **********************************************
-
+use dht20::Dht20;
 // ************* dht20 code END ************************************************
 
 use panic_halt as _;
@@ -97,7 +97,14 @@ fn main() -> ! {
     // ************* i2c code END ********************************************
     // ************* dht20 code BEGIN ******************************************
 
+    // Set up the DHT20 sensor
+    let mut dht20 = Dht20::new(i2c);
 
+    // intitialize the sensor
+    if let Err(e) = dht20.init(&mut delay) {
+      led_pin_err.set_high().unwrap();
+      loop{}
+    }
 
     // ************* dht20 code END ********************************************
 
@@ -120,6 +127,7 @@ fn main() -> ! {
         led_pin_red.set_low().unwrap();
         led_pin_yellow.set_low().unwrap();
         delay.delay_ms(500);
+        delay.delay_ns(500);
     }
 }
 
