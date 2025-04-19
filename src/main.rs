@@ -23,6 +23,8 @@ use cortex_m::prelude::_embedded_hal_blocking_i2c_Write;
 // ************* i2c code END **************************************************
 // ************* dht20 code BEGIN **********************************************
 use dht20::Dht20;
+// use esp_hal::{delay::Delay, main};
+// use cortex_m::delay::Delay;
 // ************* dht20 code END ************************************************
 
 use panic_halt as _;
@@ -98,13 +100,28 @@ fn main() -> ! {
     // ************* dht20 code BEGIN ******************************************
 
     // Set up the DHT20 sensor
-    let mut dht20 = Dht20::new(i2c);
-
-    // intitialize the sensor
-    if let Err(e) = dht20.init(&mut delay) {
-      led_pin_err.set_high().unwrap();
-      loop{}
+    // let mut delayy = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
+    // let mut dht20 = Dht20::new(i2c);
+    // let mut delayy = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
+    let core2 = pac::CorePeripherals::take().unwrap();
+    let mut sensor = Dht20::new(
+        i2c/*platform specific i2c driver*/,
+        0x38,
+        cortex_m::delay::Delay::new(core2.SYST, clocks.system_clock.freq().to_Hz())/*platform specific delay*/,
+    );
+    match sensor.read() {
+        Ok(reading) => led_pin_green.set_high().unwrap(),
+        // println!("Temp: {} °C, Hum: {} %",reading.temp, reading.hum),
+        Err(e) => {
+            led_pin_err.set_high().unwrap();
+            // error!("Error reading sensor: {e:?}");
+        }
     }
+    // intitialize the sensor
+    // if let Err(e) = dht20.init(&mut delay) {
+    //   led_pin_err.set_high().unwrap();
+    //   loop{}
+    // }
 
     // ************* dht20 code END ********************************************
 
@@ -127,7 +144,7 @@ fn main() -> ! {
         led_pin_red.set_low().unwrap();
         led_pin_yellow.set_low().unwrap();
         delay.delay_ms(500);
-        delay.delay_ns(500);
+        // delay.delay_ns(500);
     }
 }
 
