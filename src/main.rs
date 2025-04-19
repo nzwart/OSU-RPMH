@@ -10,6 +10,8 @@ use rp_pico::hal;
 
 // HAL traits
 use embedded_hal::digital::OutputPin;
+
+// ************* i2c code BEGIN ************************************************
 use rp_pico::hal::fugit::RateExtU32;
 
 // use embedded_hal::i2c::Operation::Write;
@@ -18,6 +20,10 @@ use rp_pico::hal::{
 };
 
 use cortex_m::prelude::_embedded_hal_blocking_i2c_Write;
+// ************* i2c code END **************************************************
+// ************* dht20 code BEGIN **********************************************
+
+// ************* dht20 code END ************************************************
 
 use panic_halt as _;
 
@@ -65,6 +71,9 @@ fn main() -> ! {
     let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
     let mut led_pin_red = pins.gpio15.into_push_pull_output();
     let mut led_pin_green = pins.gpio16.into_push_pull_output();
+    let mut led_pin_err = pins.gpio22.into_push_pull_output();
+
+    // ************* i2c code BEGIN ********************************************
 
     // Configure two pins as being I²C, not GPIO
     let sda_pin: Pin<_, FunctionI2C, _> = pins.gpio18.reconfigure();
@@ -84,6 +93,13 @@ fn main() -> ! {
 
     // Write three bytes to the I²C device with 7-bit address 0x2C
     i2c.write(0x2Cu8, &[1, 2, 3]).unwrap();
+
+    // ************* i2c code END ********************************************
+    // ************* dht20 code BEGIN ******************************************
+
+
+
+    // ************* dht20 code END ********************************************
 
     // TODO: our actual Pico code will go here
     // (LED blinking, sensor reading, etc.)
