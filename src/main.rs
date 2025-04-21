@@ -73,6 +73,8 @@ fn main() -> ! {
     let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
     let mut led_pin_red = pins.gpio15.into_push_pull_output();
     let mut led_pin_green = pins.gpio16.into_push_pull_output();
+    let mut led_pin_yellow2 = pins.gpio12.into_push_pull_output();
+    let mut led_pin_red2 = pins.gpio13.into_push_pull_output();
     let mut led_pin_err = pins.gpio22.into_push_pull_output();
 
     // ************* i2c code BEGIN ********************************************
@@ -129,19 +131,54 @@ fn main() -> ! {
       &clocks.system_clock,
   ), 0x38, delay);
 
-    match sensor.read() {
-        Ok(reading) => {
-            if ((reading.hum) > 10.0) {
-                led_pin_green.set_high().unwrap()
-            } else {
-                led_pin_yellow.set_high().unwrap();
+    loop {
+        //   }
+        match sensor.read() {
+            Ok(reading) => {
+                if ((reading.hum) > 0.0) {
+                    led_pin_red.set_high().unwrap();
+                    // if ((reading.hum) > 20.0) {
+                    //     led_pin_yellow.set_high().unwrap();
+                    //     if ((reading.hum) > 40.0) {
+                    //         led_pin_green.set_high().unwrap();
+                    //         if ((reading.hum) > 60.0) {
+                    //             led_pin_yellow2.set_high().unwrap();
+                    //             if ((reading.hum) > 80.0) {
+                    //                 led_pin_red2.set_high().unwrap();
+                    //             }
+                    //         }
+                    //     }
+                    // }
+                } else {
+                    led_pin_red2.set_high().unwrap();
+                    // loop {
+                    //     // Blink the LEDs at 1 Hz
+                    //     // led_pin.set_high().unwrap();
+                    //     led_pin_red2.set_high().unwrap();
+                    //     delay.delay_ms(500);
+                    //     led_pin_red.set_low().unwrap();
+                    //     delay.delay_ms(500);
+                    // }
+                }
+                if ((reading.hum) > 20.0) {
+                    led_pin_yellow.set_high().unwrap();
+                }
+                if ((reading.hum) > 40.0) {
+                    led_pin_green.set_high().unwrap();
+                }
+                if ((reading.hum) > 60.0) {
+                    led_pin_yellow2.set_high().unwrap();
+                }
+                if ((reading.hum) > 80.0) {
+                    led_pin_red2.set_high().unwrap();
+                }
+                //led_pin_green.set_high().unwrap()
+            },
+            // println!("Temp: {} °C, Hum: {} %",reading.temp, reading.hum),
+            Err(e) => {
+                led_pin_red.set_high().unwrap();
+                // error!("Error reading sensor: {e:?}");
             }
-            //led_pin_green.set_high().unwrap()
-        },
-        // println!("Temp: {} °C, Hum: {} %",reading.temp, reading.hum),
-        Err(e) => {
-            led_pin_red.set_high().unwrap();
-            // error!("Error reading sensor: {e:?}");
         }
     }
     // intitialize the sensor
