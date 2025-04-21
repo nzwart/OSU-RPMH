@@ -51,13 +51,17 @@ fn main() -> ! {
         &mut peripherals.RESETS,
     );
 
-    // Set the LED to be an output
-    let mut led_pin = pins.led.into_push_pull_output();
-    // Set the GPIO 14, 15, 16 (Pico pins 19, 20, 21) to be an output
-    let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
-    let mut led_pin_red = pins.gpio15.into_push_pull_output();
-    let mut led_pin_green = pins.gpio16.into_push_pull_output();
+    // GPIO Configurations
 
+    // Set on-board LED as on/off indicator
+    let mut led_pin = pins.led.into_push_pull_output();
+
+    // Set 5 LED outputs as general humidity-level indicators
+    let mut led_pin_vlow = pins.gpio14.into_push_pull_output();
+    let mut led_pin_low = pins.gpio15.into_push_pull_output();
+    let mut led_pin_med = pins.gpio16.into_push_pull_output();
+    let mut led_pin_high = pins.gpio17.into_push_pull_output();
+    let mut led_pin_vhigh = pins.gpio19.into_push_pull_output();
 
     // TODO: our actual Pico code will go here
     // (LED blinking, sensor reading, etc.)
