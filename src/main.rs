@@ -109,7 +109,7 @@ fn main() -> ! {
     // let core2 = pac::CorePeripherals::take().unwrap();  todo
 
 
-    led_pin_yellow.set_high().unwrap();
+    // led_pin_yellow.set_high().unwrap();
 
 
     /*   todo:  put this back if needed
@@ -130,7 +130,14 @@ fn main() -> ! {
   ), 0x38, delay);
 
     match sensor.read() {
-        Ok(reading) => led_pin_green.set_high().unwrap(),
+        Ok(reading) => {
+            if ((reading.hum) > 10.0) {
+                led_pin_green.set_high().unwrap()
+            } else {
+                led_pin_yellow.set_high().unwrap();
+            }
+            //led_pin_green.set_high().unwrap()
+        },
         // println!("Temp: {} °C, Hum: {} %",reading.temp, reading.hum),
         Err(e) => {
             led_pin_red.set_high().unwrap();
