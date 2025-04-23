@@ -4,34 +4,26 @@
 
 // Import HAL crates
 use rp_pico::entry;
-use rp_pico::hal::prelude::*;
-use rp_pico::hal::pac;
 use rp_pico::hal;
+use rp_pico::hal::pac;
+use rp_pico::hal::prelude::*;
 
 // HAL traits
 use embedded_hal::digital::OutputPin;
 
-// ************* i2c code BEGIN ************************************************
+// i2c elements
 use rp_pico::hal::fugit::RateExtU32;
+use rp_pico::hal::gpio::{FunctionI2C, Pin};
 
-// use embedded_hal::i2c::Operation::Write;
-use rp_pico::hal::{
-    gpio::{FunctionI2C, Pin},
-};
-
-use cortex_m::prelude::_embedded_hal_blocking_i2c_Write;
-// ************* i2c code END **************************************************
-// ************* dht20 code BEGIN **********************************************
+// dht20 driver
+use cortex_m::delay::Delay;
 use dht20::Dht20;
-// use esp_hal::{delay::Delay, main};
-// use cortex_m::delay::Delay;
-// ************* dht20 code END ************************************************
 
 use panic_halt as _;
 
 // Main entry point
 #[entry]
-fn main() -> ! { 
+fn main() -> ! {
     // This is the Pico-specific setup
     let mut peripherals = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
@@ -53,8 +45,9 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
-    // The delay object lets us wait for specified amounts of time (in milliseconds)
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
+    // The delay object lets us wait for specified amounts of time (in
+    // milliseconds)
+    let delay: Delay = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(peripherals.SIO);
@@ -67,150 +60,63 @@ fn main() -> ! {
         &mut peripherals.RESETS,
     );
 
+    //**************** The below code can be deleted if not needed. ************
     // Set the LED to be an output
-    let mut led_pin = pins.led.into_push_pull_output();
+    let mut led_pin_led = pins.led.into_push_pull_output();
     // Set the GPIO 14, 15, 16 (Pico pins 19, 20, 21) to be an output
     let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
     let mut led_pin_red = pins.gpio15.into_push_pull_output();
     let mut led_pin_green = pins.gpio16.into_push_pull_output();
-    let mut led_pin_yellow2 = pins.gpio12.into_push_pull_output();
-    let mut led_pin_red2 = pins.gpio13.into_push_pull_output();
-    let mut led_pin_err = pins.gpio22.into_push_pull_output();
-
-    // ************* i2c code BEGIN ********************************************
+    let mut led_pin_yellow2 = pins.gpio13.into_push_pull_output();
+    let mut led_pin_red2 = pins.gpio12.into_push_pull_output();
+    //**************** The above code can be deleted if not needed. ************
 
     // Configure two pins as being I²C, not GPIO
     let sda_pin: Pin<_, FunctionI2C, _> = pins.gpio18.reconfigure();
     let scl_pin: Pin<_, FunctionI2C, _> = pins.gpio19.reconfigure();
 
-    // Create the I²C drive, using the two pre-configured pins. This will fail
-    // at compile time if the pins are in the wrong mode, or if this I²C
-    // peripheral isn't available on these pins!
-    /*  todo: put this back?
-    let mut i2c = hal::I2C::i2c1(
-        peripherals.I2C1,
-        sda_pin,
-        scl_pin, // Try `not_an_scl_pin` here
-        400.kHz(),
-        &mut peripherals.RESETS,
-        &clocks.system_clock,
-    );
-    */
-
-    // Write three bytes to the I²C device with 7-bit address 0x2C
-    // i2c.write(0x2Cu8, &[1, 2, 3]).unwrap();
-
-    // ************* i2c code END ********************************************
-    // ************* dht20 code BEGIN ******************************************
-
-    // Set up the DHT20 sensor
-    // let mut delayy = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-    // let mut dht20 = Dht20::new(i2c);
-    // let mut delayy = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-
-    // let core2 = pac::CorePeripherals::take().unwrap();  todo
-
-
-    // led_pin_yellow.set_high().unwrap();
-
-
-    /*   todo:  put this back if needed
+    // Initiate dht20 sensor
     let mut sensor = Dht20::new(
-        i2c/*platform specific i2c driver*/,
+        hal::I2C::i2c1(
+            peripherals.I2C1,
+            sda_pin,
+            scl_pin, // Try `not_an_scl_pin` here
+            400.kHz(),
+            &mut peripherals.RESETS,
+            &clocks.system_clock,
+        ),
         0x38,
-        cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz())/*platform specific delay*/,
+        delay,
     );
-    */
 
-    let mut sensor = Dht20::new(hal::I2C::i2c1(
-      peripherals.I2C1,
-      sda_pin,
-      scl_pin, // Try `not_an_scl_pin` here
-      400.kHz(),
-      &mut peripherals.RESETS,
-      &clocks.system_clock,
-  ), 0x38, delay);
-
-    loop {
-        //   }
-        match sensor.read() {
-            Ok(reading) => {
-                if ((reading.hum) > 0.0) {
-                    led_pin_red.set_high().unwrap();
-                    // if ((reading.hum) > 20.0) {
-                    //     led_pin_yellow.set_high().unwrap();
-                    //     if ((reading.hum) > 40.0) {
-                    //         led_pin_green.set_high().unwrap();
-                    //         if ((reading.hum) > 60.0) {
-                    //             led_pin_yellow2.set_high().unwrap();
-                    //             if ((reading.hum) > 80.0) {
-                    //                 led_pin_red2.set_high().unwrap();
-                    //             }
-                    //         }
-                    //     }
-                    // }
-                } else {
-                    led_pin_red2.set_high().unwrap();
-                    // loop {
-                    //     // Blink the LEDs at 1 Hz
-                    //     // led_pin.set_high().unwrap();
-                    //     led_pin_red2.set_high().unwrap();
-                    //     delay.delay_ms(500);
-                    //     led_pin_red.set_low().unwrap();
-                    //     delay.delay_ms(500);
-                    // }
-                }
-                if ((reading.hum) > 20.0) {
-                    led_pin_yellow.set_high().unwrap();
-                }
-                if ((reading.hum) > 40.0) {
-                    led_pin_green.set_high().unwrap();
-                }
-                if ((reading.hum) > 60.0) {
-                    led_pin_yellow2.set_high().unwrap();
-                }
-                if ((reading.hum) > 80.0) {
-                    led_pin_red2.set_high().unwrap();
-                }
-                //led_pin_green.set_high().unwrap()
-            },
-            // println!("Temp: {} °C, Hum: {} %",reading.temp, reading.hum),
-            Err(e) => {
+    // sensor.read will produce two f32 values: reading.hum and reading.temp
+    match sensor.read() {
+        Ok(reading) => {
+            // Do something with the reading.hum value
+            if (reading.hum) > 0.0 {
                 led_pin_red.set_high().unwrap();
-                // error!("Error reading sensor: {e:?}");
+            }
+            if (reading.hum) > 20.0 {
+                led_pin_yellow.set_high().unwrap();
+            }
+            if (reading.hum) > 40.0 {
+                led_pin_green.set_high().unwrap();
+            }
+            if (reading.hum) > 60.0 {
+                led_pin_yellow2.set_high().unwrap();
+            }
+            if (reading.hum) > 80.0 {
+                led_pin_red2.set_high().unwrap();
             }
         }
+        Err(_e) => {
+            led_pin_led.set_high().unwrap();
+            // error!("Error reading sensor: {e:?}");
+        }
+
+        
     }
-    // intitialize the sensor
-    // if let Err(e) = dht20.init(&mut delay) {
-    //   led_pin_err.set_high().unwrap();
-    //   loop{}
-    // }
 
-    // ************* dht20 code END ********************************************
-
-    // TODO: our actual Pico code will go here
-    // (LED blinking, sensor reading, etc.)
-    loop {
-        // Blink the LEDs at 1 Hz
-        /*   Comment these out now.  Having problems sharing "Delay"
-        led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin_green.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin_red.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin_yellow.set_high().unwrap();
-        delay.delay_ms(500);
-
-        // set all low
-        led_pin.set_low().unwrap();
-        led_pin_green.set_low().unwrap();
-        led_pin_red.set_low().unwrap();
-        led_pin_yellow.set_low().unwrap();
-        delay.delay_ms(500);
-        // delay.delay_ns(500);
-         */
-    }
+    // To prevent a return from main()
+    loop {}
 }
-
