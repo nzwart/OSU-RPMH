@@ -11,3 +11,6 @@ rp-pico = "0.9"
 panic-halt = "1.0.0"
 dht20 = "0.1.0"
 
+# Added to remove the "can't find crate for test" error at the top of src/main.rs when running in vscode
+[lib]
+test = false
