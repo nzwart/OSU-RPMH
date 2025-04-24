@@ -11,5 +11,8 @@
         "scminput": false,
         "yaml": false,
         "c": false
-    }
+    },
+    // Removes linting errors when used with rust-analyzer extension in VS Code
+    "rust-analyzer.cargo.target": "thumbv7em-none-eabihf",
+    "rust-analyzer.check.allTargets": false
 }
