@@ -25,4 +25,4 @@ rustflags = [
 # - "v6m" is the architecture version
 # - "none" means no operating system
 # - "eabi" is the ABI (Application Binary Interface) standard
-target = "thumbv6m-none-eabi" 
+target = "thumbv6m-none-eabi"

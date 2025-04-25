@@ -10,4 +10,3 @@ embedded-hal = "1.0.0"
 rp-pico = "0.9"
 panic-halt = "1.0.0"
 dht20 = "0.1.0"
-
