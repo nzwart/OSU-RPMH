@@ -30,21 +30,24 @@ struct BoardComponents {
         hal::I2C<
             pac::I2C1,
             (
-                Pin<hal::gpio::bank0::Gpio18, FunctionI2C, _>,
-                Pin<hal::gpio::bank0::Gpio19, FunctionI2C, _>,
+                Pin<hal::gpio::bank0::Gpio18, FunctionI2C, hal::gpio::PullUp>,
+                Pin<hal::gpio::bank0::Gpio19, FunctionI2C, hal::gpio::PullUp>,
             ),
         >,
         Delay,
     >,
 
     // LED Outputs
-    led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::Output<hal::gpio::PushPull>, _>, // note: this is the onboard LED, wheras the others in the following initializations are LEDs physically connected to GPIO pins
-    led_pin_yellow: Pin<hal::gpio::bank0::Gpio14, hal::gpio::Output<hal::gpio::PushPull>, _>,
-    led_pin_red: Pin<hal::gpio::bank0::Gpio15, hal::gpio::Output<hal::gpio::PushPull>, _>,
-    led_pin_green: Pin<hal::gpio::bank0::Gpio16, hal::gpio::Output<hal::gpio::PushPull>, _>,
-    led_pin_yellow2: Pin<hal::gpio::bank0::Gpio13, hal::gpio::Output<hal::gpio::PushPull>, _>,
-    led_pin_red2: Pin<hal::gpio::bank0::Gpio12, hal::gpio::Output<hal::gpio::PushPull>, _>,
-    // Other peripherals can be added below, such as an LCD
+    // note: we're using PullDown to match what into_push_pull_output() returns, as we need to explicitly specify all generic type parameters in Rust struct definitions. The into_push_pull_output() function configures pins with PullDown by default, so by using the same type here, we ensure compatibility between our struct definition and the initialization code in setup_board()
+    led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>, // note: this is the onboard LED, whereas the others in the following initializations are LEDs physically connected to GPIO pins
+    led_pin_yellow:
+        Pin<hal::gpio::bank0::Gpio14, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
+    led_pin_red: Pin<hal::gpio::bank0::Gpio15, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
+    led_pin_green: Pin<hal::gpio::bank0::Gpio16, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
+    led_pin_yellow2:
+        Pin<hal::gpio::bank0::Gpio13, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
+    led_pin_red2: Pin<hal::gpio::bank0::Gpio12, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
+    // todo: Other peripherals can be added below, such as an LCD
 }
 
 // Set up all of our board components and return them in a single struct
