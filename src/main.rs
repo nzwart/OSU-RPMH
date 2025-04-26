@@ -39,9 +39,8 @@ struct BoardComponents {
         Delay,
     >,
 
-    // LED Outputs
-    // note: we're using PullDown to match what into_push_pull_output() returns, as we need to explicitly specify all generic type parameters in Rust struct definitions. The into_push_pull_output() function configures pins with PullDown by default, so by using the same type here, we ensure compatibility between our struct definition and the initialization code in setup_board()
-    led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>, // note: this is the onboard LED, whereas the others in the following initializations are LEDs physically connected to GPIO pins
+    // On board LED
+    led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
 
     // A struct containing all indicator LEDs and methods to control their behavior
     led_array: leds::LedArray,
@@ -90,6 +89,7 @@ fn setup_board() -> BoardComponents {
     // Set the onboard RPP LED to be an output
     let led_pin_led = pins.led.into_push_pull_output();
 
+    // Initialize an led array with five led pins
     let led_array = leds::LedArray::new(pins.gpio12, pins.gpio13, pins.gpio14, pins.gpio15, pins.gpio16);
 
     // Configure two pins as being I²C, not GPIO
@@ -129,21 +129,7 @@ fn main() -> ! {
     // sensor.read will produce two f32 values: reading.hum and reading.temp
     match components.sensor.read() {
         Ok(reading) => {
-//             if reading.hum > 0.0 {
-                // components.led_pin_red.set_high().unwrap();
-            // }
-            // if reading.hum > 20.0 {
-                // components.led_pin_yellow.set_high().unwrap();
-            // }
-            // if reading.hum > 40.0 {
-                // components.led_pin_green.set_high().unwrap();
-            // }
-            // if reading.hum > 60.0 {
-                // components.led_pin_yellow2.set_high().unwrap();
-            // }
-            // if reading.hum > 80.0 {
-                // components.led_pin_red2.set_high().unwrap();
-            // }
+            components.led_array.update(reading);
         }
         Err(_e) => {
             components.led_pin_led.set_high().unwrap();

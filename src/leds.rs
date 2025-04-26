@@ -1,6 +1,8 @@
 use rp_pico::hal::gpio::{self, bank0::{Gpio12, Gpio13, Gpio14, Gpio15, Gpio16}, DefaultTypeState, Pin};
+use embedded_hal::digital::OutputPin;
+use dht20::Reading;
 
-// A struct for interacting with the LedArray 
+// A struct for interacting with the LED Array 
 pub struct LedArray {
     led_pin_yellow:     Pin<Gpio14, gpio::FunctionSioOutput, gpio::PullDown>,
     led_pin_red:        Pin<Gpio15, gpio::FunctionSioOutput, gpio::PullDown>,
@@ -24,6 +26,25 @@ impl LedArray {
             led_pin_green: gpio16.into_push_pull_output(),
             led_pin_yellow2: gpio13.into_push_pull_output(),
             led_pin_red2: gpio12.into_push_pull_output(),
+        }
+    }
+
+    // Update the LED array based on a sensor reading
+    pub fn update(mut self: Self, reading: Reading) {
+        if reading.hum > 0.0 {
+            self.led_pin_red.set_high().unwrap();
+        }
+        if reading.hum > 20.0 {
+            self.led_pin_yellow.set_high().unwrap();
+        }
+        if reading.hum > 40.0 {
+            self.led_pin_green.set_high().unwrap();
+        }
+        if reading.hum > 60.0 {
+            self.led_pin_yellow2.set_high().unwrap();
+        }
+        if reading.hum > 80.0 {
+            self.led_pin_red2.set_high().unwrap();
         }
     }
 }
