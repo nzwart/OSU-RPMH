@@ -5,7 +5,6 @@
 // Import HAL crates
 use rp_pico::entry;
 use rp_pico::hal;
-use rp_pico::hal::gpio::DefaultTypeState;
 use rp_pico::hal::pac;
 use rp_pico::hal::prelude::*;
 
@@ -22,31 +21,7 @@ use dht20::Dht20;
 
 use panic_halt as _;
 
-struct LedArray {
-    led_pin_yellow:     Pin<hal::gpio::bank0::Gpio14, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
-    led_pin_red:        Pin<hal::gpio::bank0::Gpio15, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
-    led_pin_green:      Pin<hal::gpio::bank0::Gpio16, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
-    led_pin_yellow2:    Pin<hal::gpio::bank0::Gpio13, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
-    led_pin_red2:       Pin<hal::gpio::bank0::Gpio12, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
-}
-
-impl LedArray {
-    fn new(
-        gpio12: Pin<hal::gpio::bank0::Gpio12, <hal::gpio::bank0::Gpio12 as DefaultTypeState>::Function, <hal::gpio::bank0::Gpio12 as DefaultTypeState>::PullType>,
-        gpio13: Pin<hal::gpio::bank0::Gpio13, <hal::gpio::bank0::Gpio13 as DefaultTypeState>::Function, <hal::gpio::bank0::Gpio13 as DefaultTypeState>::PullType >,
-        gpio14: Pin<hal::gpio::bank0::Gpio14, <hal::gpio::bank0::Gpio14 as DefaultTypeState>::Function, <hal::gpio::bank0::Gpio14 as DefaultTypeState>::PullType>,
-        gpio15: Pin<hal::gpio::bank0::Gpio15, <hal::gpio::bank0::Gpio15 as DefaultTypeState>::Function, <hal::gpio::bank0::Gpio15 as DefaultTypeState>::PullType>,
-        gpio16: Pin<hal::gpio::bank0::Gpio16, <hal::gpio::bank0::Gpio16 as DefaultTypeState>::Function, <hal::gpio::bank0::Gpio16 as DefaultTypeState>::PullType>,
-    ) -> Self {
-        LedArray {
-            led_pin_yellow: gpio14.into_push_pull_output(),
-            led_pin_red: gpio15.into_push_pull_output(),
-            led_pin_green: gpio16.into_push_pull_output(),
-            led_pin_yellow2: gpio13.into_push_pull_output(),
-            led_pin_red2: gpio12.into_push_pull_output(),
-        }
-    }
-}
+mod leds;
 
 // Abstract the components we'll be using on the board into their own struct
 // This is useful for passing around the components in a single "object"
@@ -69,7 +44,7 @@ struct BoardComponents {
     led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>, // note: this is the onboard LED, whereas the others in the following initializations are LEDs physically connected to GPIO pins
 
     // A struct containing all indicator LEDs and methods to control their behavior
-    led_array: LedArray,
+    led_array: leds::LedArray,
 
     // todo: Other peripherals can be added below, such as an LCD
 }
@@ -115,7 +90,7 @@ fn setup_board() -> BoardComponents {
     // Set the onboard RPP LED to be an output
     let led_pin_led = pins.led.into_push_pull_output();
 
-    let led_array = LedArray::new(pins.gpio12, pins.gpio13, pins.gpio14, pins.gpio15, pins.gpio16);
+    let led_array = leds::LedArray::new(pins.gpio12, pins.gpio13, pins.gpio14, pins.gpio15, pins.gpio16);
 
     // Configure two pins as being I²C, not GPIO
     let sda_pin = pins.gpio18.reconfigure();
