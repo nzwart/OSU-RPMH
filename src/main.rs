@@ -26,7 +26,7 @@ mod leds;
 // Abstract the components we'll be using on the board into their own struct
 // This is useful for passing around the components in a single "object"
 // This struct can be expanded to include other components as needed (i.e. our LCD)
-struct BoardComponents {
+pub struct BoardComponents {
     // DHT-20 humidity sensor
     sensor: Dht20<
         hal::I2C<
@@ -49,7 +49,7 @@ struct BoardComponents {
 }
 
 // Set up all of our board components and return them in a single struct
-fn setup_board() -> BoardComponents {
+pub fn setup_board() -> BoardComponents {
     // This is the Pico-specific setup
     let mut peripherals = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();

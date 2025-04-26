@@ -30,7 +30,7 @@ impl LedArray {
     }
 
     // Update the LED array based on a sensor reading
-    pub fn update(mut self: Self, reading: Reading) {
+    pub fn update(&mut self, reading: Reading) {
         if reading.hum > 0.0 {
             self.led_pin_red.set_high().unwrap();
         }
