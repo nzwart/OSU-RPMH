@@ -78,6 +78,11 @@ fn setup_board() -> BoardComponents {
     }
 }
 
+/*
+    To run the test program, use the command $cargo run --bin led_test
+
+    TODO: Move the above documentation into a more obvious place (possibly the README)
+*/
 #[entry]
 fn main() -> ! {
     // Fake readings to test the LED array
