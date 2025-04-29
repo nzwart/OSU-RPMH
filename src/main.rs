@@ -4,25 +4,13 @@
 
 // Import HAL crates
 use rp_pico::entry;
-use rp_pico::hal;
-use rp_pico::hal::pac;
-use rp_pico::hal::prelude::*;
 
 // HAL traits
 use embedded_hal::digital::OutputPin;
 
-// i2c elements
-use rp_pico::hal::fugit::RateExtU32;
-use rp_pico::hal::gpio::{FunctionI2C, Pin};
-
-// dht20 driver
-use cortex_m::delay::Delay;
-use dht20::Dht20;
-
 use panic_halt as _;
 
 mod board;
-
 
 
 // Main entry point

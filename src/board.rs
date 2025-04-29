@@ -2,9 +2,6 @@ use rp_pico::hal;
 use rp_pico::hal::pac;
 use crate::board::hal::Clock;
 
-// HAL traits
-// use embedded_hal::digital::OutputPin;    todo
-
 // i2c elements
 use rp_pico::hal::fugit::RateExtU32;
 use rp_pico::hal::gpio::{FunctionI2C, Pin};
@@ -30,7 +27,12 @@ pub struct BoardComponents {
   >,
 
   // LED Outputs
-  // note: we're using PullDown to match what into_push_pull_output() returns, as we need to explicitly specify all generic type parameters in Rust struct definitions. The into_push_pull_output() function configures pins with PullDown by default, so by using the same type here, we ensure compatibility between our struct definition and the initialization code in setup_board()
+  // note: we're using PullDown to match what into_push_pull_output() 
+  //   returns, as we need to explicitly specify all generic type 
+  //   parameters in Rust struct definitions. The into_push_pull_output() 
+  //   function configures pins with PullDown by default, so by using 
+  //   the same type here, we ensure compatibility between our struct 
+  //   definition and the initialization code in setup_board()
   pub led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>, // note: this is the onboard LED, whereas the others in the following initializations are LEDs physically connected to GPIO pins
   pub led_pin_yellow:
       Pin<hal::gpio::bank0::Gpio14, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
@@ -43,7 +45,7 @@ pub struct BoardComponents {
 }
 
 impl BoardComponents {
- // Set up all of our board components and return them in a single struct
+  // Set up all of our board components and return them in a single struct
   pub fn setup_board() -> BoardComponents {
     // This is the Pico-specific setup
     let mut peripherals = pac::Peripherals::take().unwrap();
