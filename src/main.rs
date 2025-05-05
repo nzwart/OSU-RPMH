@@ -15,9 +15,9 @@ use rp_pico::hal::gpio::{FunctionI2C, Pin};
 
 // dht20 driver
 use cortex_m::delay::Delay;
-// use dht20::Dht20; // <- the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay
+// use dht20::Dht20;
 mod board;
-mod dht;
+mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
 
 use panic_halt as _;
 
