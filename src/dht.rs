@@ -7,20 +7,22 @@ URL: https://github.com/MnlPhlp/dht20
 URL: https://crates.io/crates/dht20
 */
 
-use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
-use embedded_hal::blocking::delay::DelayMs;
 use core::fmt;
+use embedded_hal::blocking::delay::DelayMs;
+use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 
 use log::info;
 
-use panic_halt as _; // addition from OSU-PRMH repo solution 
+use panic_halt as _; // addition from OSU-PRMH repo solution
 
+#[allow(dead_code)] // note: remove this line if we ever use the temp variable.
 #[derive(Debug, Clone)]
 pub struct Reading {
     pub temp: f32,
     pub hum: f32,
 }
 
+#[allow(dead_code)] // note: remove this line if we ever use the Error enum
 #[derive(Debug)]
 pub enum Error<E: fmt::Debug> {
     I2cError(E),
@@ -45,7 +47,11 @@ where
     E: fmt::Debug,
 {
     pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
-        Self { i2c, address, delay }
+        Self {
+            i2c,
+            address,
+            delay,
+        }
     }
 
     pub fn read(&mut self) -> Result<Reading, E> {
@@ -98,7 +104,7 @@ where
         self.i2c.write(self.address, data)
     }
     // this is a workaround for the parallel calls of the delay function, my change to this file
-    pub fn delay_ms(&mut self, ms: u16) -> (){
+    pub fn delay_ms(&mut self, ms: u16) -> () {
         self.delay.delay_ms(ms);
     }
     // end of changes
