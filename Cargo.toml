@@ -2,6 +2,7 @@
 name = "OSU-RPMH"
 version = "0.1.0"
 edition = "2021"
+default-run = "OSU-RPMH"
 
 [dependencies]
 cortex-m = "0.7"
