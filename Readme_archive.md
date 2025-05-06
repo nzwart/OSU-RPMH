@@ -1,40 +1,18 @@
-### Rust code
+### Rust code hello-leds
 
-#### General board wiring
-One or more of the four blue side rail sections (two per side) can be connected to any ground pins on the Pico (3, 8, 13, 23, 33, or 38)
-
-#### Wiring the DHT20
-
- Facing the dht20's "grated" side with "ASAIR" right above the pins:
- Starting at the far left:
-  - pin 1: power, connect to PICO pin 36(3v) or 40(5v) directly, using red rail
-  - pin 2: SDA (serial data), connect to GPIO 18 (Pico pin 24)
-  - pin 3: Ground, connect to ground using blue ground side rail
-  - pin 4: SCL (clock), connect to GPIO 19 (Pico pin 25)
-
-  ![Image of DHT20 humidity sensor](/docs/dht20_pins.jpg)
-
-_The LED section below can be deleted if not using led bulbs_
-
-#### Wiring LEDs
-The external leds have two wires: the long one is positive, the short one is ground.  The led ground gets wired to the ground "rail" (blue) that ties into a Pico ground pin.  The longer led lead is wired to one of the GPIO pins, using a 220 resistor as the wire.  The code in this repo has the following connections:
+Wiring the board:  The external leds have two wires: the long one is positive, the short one is ground.  The led ground gets wired to the ground "rail" (blue) that ties into a Pico ground pin.  The longer led lead is wired to one of the GPIO pins, using a 220 resistor as the wire.  The code in this repo has the following connections:
 
  - Red to GPIO 15  (Pico pin 20)
  - Yellow to GPIO 14  (Pico pin 19)
  - Green to GPIO 16  (Pico pin 21)
- - Yellow2 to GPIO 13 (Pico pin 17)
- - Red2 to GPIO 12 (Pico pin 16)
 
- - Ground to a grounded blue side rail, or to one of: 
-   - Pico pins: 3, 8, 13, 18, 23, 28, 33, or 38
+ - Ground (negative, blue) (Pico pins: 3, 8, 13, 18, 23, 28, 33, or 38)
+ 
+ - Ground (negative, blue) (Pico pins: 3, 8, 13, 18, 23, 28, 33, or 38)
 
-_The pins should be side by side in the order shown above (red, yellow, green, yellow2, red2)_
-
-### To Run This Code (from the branch)
-
-To check and run this code, first pull the branch 'emb-hal-i2c-dht20' to your machine
- - In your (IDE) terminal, run ```git branch --all```.  You will see ```origin/emb-hal-i2c-dht20```
- - Run ```git checkout emb-hal-i2c-dht20```
+To check and run this code, first pull the branch 'hello-leds' to your machine
+ - In your (IDE) terminal, run ```git branch --all```.  You will see ```origin/hello-leds```
+ - Run ```git checkout hello-leds```
 
  - Make sure you have Rust installed in the directory ```rustc --version```
     - if error appears, initialize Rust with ```curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh``` 

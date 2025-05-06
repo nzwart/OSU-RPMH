@@ -4,80 +4,66 @@
 
 // Import HAL crates
 use rp_pico::entry;
-use rp_pico::hal::prelude::*;
-use rp_pico::hal::pac;
-use rp_pico::hal;
 
 // HAL traits
-use embedded_hal::digital::OutputPin;
+// use embedded_hal::digital::OutputPin; // depreciated due to updated version to utilie embedded-hal = "0.2.7" for mod solution of Delay
+use embedded_hal::digital::v2::OutputPin;
+
+mod board;
+mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
+mod leds;
 
 use panic_halt as _;
 
 // Main entry point
 #[entry]
-fn main() -> ! { 
-    // This is the Pico-specific setup
-    let mut peripherals = pac::Peripherals::take().unwrap();
-    let core = pac::CorePeripherals::take().unwrap();
+fn main() -> ! {
+    // Set up the board and get all components via our struct
+    let mut components = board::BoardComponents::setup_board();
 
-    // Set up the watchdog driver - needed by the clock setup code
-    let mut watchdog = hal::Watchdog::new(peripherals.WATCHDOG);
+    // sensor.read will produce two f32 values: reading.hum and reading.temp
+    // match components.sensor.read() {
+    //     Ok(reading) => {
+    //         if reading.hum > 0.0 {
+    //             components.led_pin_red.set_high().unwrap();
+    //         }
+    //         if reading.hum > 20.0 {
+    //             components.led_pin_yellow.set_high().unwrap();
+    //         }
+    //         if reading.hum > 40.0 {
+    //             components.led_pin_green.set_high().unwrap();
+    //         }
+    //         if reading.hum > 60.0 {
+    //             components.led_pin_yellow2.set_high().unwrap();
+    //         }
+    //         if reading.hum > 80.0 {
+    //             components.led_pin_red2.set_high().unwrap();
+    //         }
+    //     }
+    //     Err(_e) => {
+    //         components.led_pin_led.set_high().unwrap();
+    //         // error!("Error reading sensor: {e:?}");
+    //     }
+    // }
 
-    // Configure the clocks
-    // (The default is to generate a 125 MHz system clock)
-    let clocks = hal::clocks::init_clocks_and_plls(
-        rp_pico::XOSC_CRYSTAL_FREQ,
-        peripherals.XOSC,
-        peripherals.CLOCKS,
-        peripherals.PLL_SYS,
-        peripherals.PLL_USB,
-        &mut peripherals.RESETS,
-        &mut watchdog,
-    )
-    .ok()
-    .unwrap();
-
-    // The delay object lets us wait for specified amounts of time (in milliseconds)
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-
-    // The single-cycle I/O block controls our GPIO pins
-    let sio = hal::Sio::new(peripherals.SIO);
-
-    // Set the pins up according to their function on this particular board
-    let pins = rp_pico::Pins::new(
-        peripherals.IO_BANK0,
-        peripherals.PADS_BANK0,
-        sio.gpio_bank0,
-        &mut peripherals.RESETS,
-    );
-
-    // Set the LED to be an output
-    let mut led_pin = pins.led.into_push_pull_output();
-    // Set the GPIO 14, 15, 16 (Pico pins 19, 20, 21) to be an output
-    let mut led_pin_yellow = pins.gpio14.into_push_pull_output();
-    let mut led_pin_red = pins.gpio15.into_push_pull_output();
-    let mut led_pin_green = pins.gpio16.into_push_pull_output();
-
-
-    // TODO: our actual Pico code will go here
-    // (LED blinking, sensor reading, etc.)
+    // To prevent a return from main()
     loop {
-        // Blink the LEDs at 1 Hz
-        led_pin.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin_green.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin_red.set_high().unwrap();
-        delay.delay_ms(500);
-        led_pin_yellow.set_high().unwrap();
-        delay.delay_ms(500);
+        match components.sensor.read() {
+            Ok(reading) => {
+                components.led_array.update(reading);
+            }
+            Err(_e) => {
+                components.led_pin_led.set_high().unwrap();
+                // error!("Error reading sensor: {e:?}");
+            }
+        }
+        // Dht20 sensor crate class now has a delay function appended to it
+        components.sensor.delay_ms(10000); // sleep 10 seconds between readings
 
-        // set all low
-        led_pin.set_low().unwrap();
-        led_pin_green.set_low().unwrap();
-        led_pin_red.set_low().unwrap();
-        led_pin_yellow.set_low().unwrap();
-        delay.delay_ms(500);
+        // reset LEDs to off
+        components.led_array.clear();
+
+        // todo: use our components here via the `components` struct
     }
 }
-
+// end of file
