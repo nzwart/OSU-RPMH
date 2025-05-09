@@ -2,7 +2,7 @@
 cite: source dht20 v0.1.0 crate for rust embedded DHT20 sensor
 This module forks the dht20 crate to add support for multiple uses of RPP core functions, like Delay
 This file modifies the fork of the published crate, less the extra feature code for non-pertinent embedded-hal version
-!!!    additions by Malcolm are only lines 100 t0 103.
+!!!    additions by Malcolm are only lines 100 t0 103. and updating the struct and impl to borrow a mutable delay 
 URL: https://github.com/MnlPhlp/dht20
 URL: https://crates.io/crates/dht20
 */
@@ -10,6 +10,9 @@ URL: https://crates.io/crates/dht20
 use core::fmt;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
+
+// use embedded_hal::delay::DelayNs;
+// use embedded_hal::i2c::{I2c, SevenBitAddress};
 
 use log::info;
 
@@ -28,25 +31,29 @@ pub enum Error<E: fmt::Debug> {
     I2cError(E),
     ReadTooFast,
 }
-
-pub struct Dht20<I2C, DELAY, E>
+// updated Dht20 with mutable borrow of DELAY
+pub struct Dht20<'a, I2C, DELAY, E>
 where
     I2C: Read<Error = E> + Write<Error = E> + WriteRead<Error = E>,
     DELAY: DelayMs<u16>,
+    // I2C: I2c<SevenBitAddress, Error=E>,
+    // DELAY: DelayNs,
     E: fmt::Debug,
 {
     i2c: I2C,
     address: u8,
-    delay: DELAY,
+    delay: &'a mut DELAY,
 }
-
-impl<I2C, DELAY, E> Dht20<I2C, DELAY, E>
+// updated Dht20 with mutable borrow of DELAY
+impl<'a, I2C, DELAY, E> Dht20<'a, I2C, DELAY, E>
 where
     I2C: Read<Error = E> + Write<Error = E> + WriteRead<Error = E>,
     DELAY: DelayMs<u16>,
+    // I2C: I2c<SevenBitAddress, Error=E>,
+    // DELAY: DelayNs,
     E: fmt::Debug,
 {
-    pub fn new(i2c: I2C, address: u8, delay: DELAY) -> Self {
+    pub fn new(i2c: I2C, address: u8, delay: &'a mut DELAY) -> Self {
         Self {
             i2c,
             address,
@@ -106,6 +113,10 @@ where
     // this is a workaround for the parallel calls of the delay function, my change to this file
     pub fn delay_ms(&mut self, ms: u16) -> () {
         self.delay.delay_ms(ms);
+    }
+    // added mutable borrow of DELAY for LCD
+    pub fn delay(&mut self) -> &mut DELAY {
+        &mut self.delay
     }
     // end of changes
 }

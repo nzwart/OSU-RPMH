@@ -5,9 +5,10 @@ edition = "2021"
 default-run = "OSU-RPMH"
 
 [dependencies]
-cortex-m = "0.7"
+cortex-m = "0.7.7"
 cortex-m-rt = "0.7"
 embedded-hal = "0.2.7"
 rp-pico = "0.9"
 panic-halt = "1.0.0"
 log = "0.4.27"
+liquidcrystal_i2c-rs = "0.1.0"
