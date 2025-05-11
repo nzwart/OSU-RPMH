@@ -206,7 +206,7 @@ fn main() -> ! {
         // let hum_string = format!("{}", the_hum);
         // lcd.print("{}",the_hum).unwrap();
         // lcd.print(hum_string).unwrap();
-        lcd.print("Hello World!").unwrap();
+        lcd.print("Current Humidity").unwrap();
 
         //  Humidity reading placement (col, row): on lower row, centered (for 1
         //    decimal place precision)
