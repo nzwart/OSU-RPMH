@@ -7,6 +7,9 @@ use rp_pico::entry;
 
 // HAL traits
 // use embedded_hal::digital::OutputPin; // depreciated due to updated version to utilie embedded-hal = "0.2.7" for mod solution of Delay
+use core::fmt;
+use embedded_hal::blocking::delay::DelayMs;
+use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use embedded_hal::digital::v2::OutputPin;
 
 // mod board; // depreciated for LCD proof-of-concept to enable repeat borrow of delay in main loop
@@ -22,8 +25,8 @@ use rp_pico::hal::prelude::*;
 use rp_pico::hal::fugit::RateExtU32;
 
 // ryu formats a float as a string, as required by the lcd
-use ryu;
-use crate::utils::round_to_decimal;   // modularize some no-std math out of main
+use crate::utils::round_to_decimal;
+use ryu; // modularize some no-std math out of main
 
 // custom adapted dht20 driver import
 use crate::dht::Dht20;
@@ -31,9 +34,32 @@ use crate::dht::Dht20;
 use cortex_m::delay::Delay;
 
 use liquidcrystal_i2c_rs::{Backlight, Display, Lcd};
-static  LCD_ADDRESS: u8 = 0x27;
+static LCD_ADDRESS: u8 = 0x27;
 
 use panic_halt as _;
+
+fn read_sensor<'a, I2C, DELAY, E>(
+    sensor: &mut Dht20<'a, I2C, DELAY, E>,
+    led_array: &mut leds::LedArray,
+    led_pin_led: &mut impl OutputPin,
+) -> f32
+where
+    I2C: Read<Error = E> + Write<Error = E> + WriteRead<Error = E>,
+    DELAY: DelayMs<u16>,
+    E: fmt::Debug,
+{
+    match sensor.read() {
+        Ok(reading) => {
+            let hum = reading.hum;
+            led_array.update(&reading);
+            hum
+        }
+        Err(_e) => {
+            let _ = led_pin_led.set_high();
+            101.0 // Return the default value on error
+        }
+    }
+}
 
 // Main entry point
 #[entry]
@@ -62,7 +88,7 @@ fn main() -> ! {
 
     // The delay object lets us wait for specified amounts of time (in milliseconds)
     let mut delay = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
-    
+
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(peripherals.SIO);
 
@@ -104,8 +130,8 @@ fn main() -> ! {
     let mut sensor = Dht20::new(i2c, 0x38, &mut delay); // mutable borrow of delay
 
     // Configure two pins as being I²C for LCD SDA/SCL
-    let sda_lcd_pin = pins.gpio0.reconfigure(); 
-    let scl_lcd_pin = pins.gpio1.reconfigure(); 
+    let sda_lcd_pin = pins.gpio0.reconfigure();
+    let scl_lcd_pin = pins.gpio1.reconfigure();
 
     let mut i2clcd = hal::I2C::i2c0(
         peripherals.I2C0,
@@ -115,44 +141,6 @@ fn main() -> ! {
         &mut peripherals.RESETS,
         &clocks.system_clock,
     );
-
-    // let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, &mut sensor.delay()).unwrap();
-    // let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, &mut sensor.delay()).unwrap();
-    // let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, sensor.delay()).unwrap();
-
-    // lcd.set_display(Display::On).unwrap();
-    // lcd.set_backlight(Backlight::On).unwrap();
-
-    // lcd.clear().unwrap();
-    // lcd.print("Hello World!").unwrap();
-
-    // Set up the board and get all components via our struct
-    // let mut components = board::BoardComponents::setup_board();
-
-    // sensor.read will produce two f32 values: reading.hum and reading.temp
-    // match components.sensor.read() {
-    //     Ok(reading) => {
-    //         if reading.hum > 0.0 {
-    //             components.led_pin_red.set_high().unwrap();
-    //         }
-    //         if reading.hum > 20.0 {
-    //             components.led_pin_yellow.set_high().unwrap();
-    //         }
-    //         if reading.hum > 40.0 {
-    //             components.led_pin_green.set_high().unwrap();
-    //         }
-    //         if reading.hum > 60.0 {
-    //             components.led_pin_yellow2.set_high().unwrap();
-    //         }
-    //         if reading.hum > 80.0 {
-    //             components.led_pin_red2.set_high().unwrap();
-    //         }
-    //     }
-    //     Err(_e) => {
-    //         components.led_pin_led.set_high().unwrap();
-    //         // error!("Error reading sensor: {e:?}");
-    //     }
-    // }
 
     // init floating point pass-through variable to copy reading.hum before translating to string to print to LCD
     let mut the_hum: f32 = 101.0;
@@ -164,35 +152,7 @@ fn main() -> ! {
 
     // To prevent a return from main()
     loop {
-        // match components.sensor.read() {
-        //     Ok(reading) => {
-        //         components.led_array.update(reading);
-        //     }
-        //     Err(_e) => {
-        //         components.led_pin_led.set_high().unwrap();
-        //         // error!("Error reading sensor: {e:?}");
-        //     }
-        // }
-        // Dht20 sensor crate class now has a delay function appended to it
-        // components.sensor.delay_ms(10000); // sleep 10 seconds between readings
-
-        match sensor.read() {
-            Ok(reading) => {
-                the_hum = reading.hum;
-                led_array.update(reading);
-            }
-            Err(_e) => {
-                led_pin_led.set_high().unwrap();
-                // error!("Error reading sensor: {e:?}");
-            }
-        }
-        // lcd.print("Hello World!").unwrap();
-
-        // sensor.delay_ms(10000); // sleep 10 seconds between readings
-
-        // // reset LEDs to off
-        // // components.led_array.clear();
-        // led_array.clear();
+        the_hum = read_sensor(&mut sensor, &mut led_array, &mut led_pin_led);
 
         // todo: use our components here via the `components` struct
         let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, sensor.delay()).unwrap();
@@ -201,22 +161,16 @@ fn main() -> ! {
         lcd.set_backlight(Backlight::On).unwrap();
 
         lcd.clear().unwrap();
-        // let hum_string = the_hum.to_string();
-        // let hum_string = format!("{}", the_hum);
-        // lcd.print("{}",the_hum).unwrap();
-        // lcd.print(hum_string).unwrap();
+
         lcd.print("Current Humidity").unwrap();
 
-        //  Humidity reading placement (col, row): on lower row, centered (for 1
-        //    decimal place precision)
         lcd.set_cursor_position(5, 1).unwrap();
-        lcd.print(buffer.format(round_to_decimal(the_hum, rounding))).unwrap();
+        lcd.print(buffer.format(round_to_decimal(the_hum, rounding)))
+            .unwrap();
         lcd.print(" %").unwrap();
 
         sensor.delay_ms(10000); // sleep 10 seconds between readings
 
-        // reset LEDs to off
-        // components.led_array.clear();
         led_array.clear();
     }
 }

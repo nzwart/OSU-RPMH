@@ -129,7 +129,7 @@ fn main() -> ! {
         components.delay.delay_ms(500);
 
         if i < readings.len() {
-            components.led_array.update(readings[i].clone());
+            components.led_array.update(&readings[i]);
             i += 1;
         } else {
             i = 0;
