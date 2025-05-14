@@ -20,7 +20,6 @@ use rp_pico::hal::prelude::*;
 
 // i2c elements
 use rp_pico::hal::fugit::RateExtU32;
-use rp_pico::hal::gpio::{FunctionI2C, Pin};
 
 // ryu formats a float as a string, as required by the lcd
 use ryu;
@@ -62,7 +61,7 @@ fn main() -> ! {
     .unwrap();
 
     // The delay object lets us wait for specified amounts of time (in milliseconds)
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
+    let mut delay = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
     
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(peripherals.SIO);

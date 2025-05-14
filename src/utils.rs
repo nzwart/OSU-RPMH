@@ -43,6 +43,6 @@ fn pow(base: f32, exp: u32) -> f32 {
       result *= base;
     }
   }
-  // return
+
   result
 }
