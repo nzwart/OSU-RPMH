@@ -32,40 +32,34 @@ pub enum Error<E: fmt::Debug> {
     ReadTooFast,
 }
 // updated Dht20 with mutable borrow of DELAY
-pub struct Dht20<'a, I2C, DELAY, E>
+pub struct Dht20<I2C, E>
 where
     I2C: Read<Error = E> + Write<Error = E> + WriteRead<Error = E>,
-    DELAY: DelayMs<u16>,
-    // I2C: I2c<SevenBitAddress, Error=E>,
-    // DELAY: DelayNs,
     E: fmt::Debug,
 {
     i2c: I2C,
     address: u8,
-    delay: &'a mut DELAY,
+    // delay: &'a mut DELAY,
 }
 // updated Dht20 with mutable borrow of DELAY
-impl<'a, I2C, DELAY, E> Dht20<'a, I2C, DELAY, E>
+impl<I2C, E> Dht20<I2C, E>
 where
     I2C: Read<Error = E> + Write<Error = E> + WriteRead<Error = E>,
-    DELAY: DelayMs<u16>,
-    // I2C: I2c<SevenBitAddress, Error=E>,
-    // DELAY: DelayNs,
     E: fmt::Debug,
 {
-    pub fn new(i2c: I2C, address: u8, delay: &'a mut DELAY) -> Self {
+    pub fn new(i2c: I2C, address: u8) -> Self {
         Self {
             i2c,
             address,
-            delay,
         }
     }
 
-    pub fn read(&mut self) -> Result<Reading, E> {
+    pub fn read<DELAY>(&mut self, delay: &mut DELAY) -> Result<Reading, E>
+    where DELAY: DelayMs<u16> {
         self.reset()?;
         // request reading
         self.write_data(&[0xAC, 0x33, 0])?;
-        self.delay.delay_ms(80);
+        delay.delay_ms(80);
         // read data
         let data = self.read_data()?;
         // convert values
@@ -110,13 +104,4 @@ where
     fn write_data(&mut self, data: &[u8]) -> Result<(), E> {
         self.i2c.write(self.address, data)
     }
-    // this is a workaround for the parallel calls of the delay function, my change to this file
-    pub fn delay_ms(&mut self, ms: u16) -> () {
-        self.delay.delay_ms(ms);
-    }
-    // added mutable borrow of DELAY for LCD
-    pub fn delay(&mut self) -> &mut DELAY {
-        &mut self.delay
-    }
-    // end of changes
 }
