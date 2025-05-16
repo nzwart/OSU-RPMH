@@ -40,7 +40,6 @@ use panic_halt as _;
 
 fn read_sensor<'a, I2C, DELAY, E>(
     sensor: &mut Dht20<'a, I2C, DELAY, E>,
-    led_array: &mut leds::LedArray,
     led_pin_led: &mut impl OutputPin,
 ) -> f32
 where
@@ -51,7 +50,6 @@ where
     match sensor.read() {
         Ok(reading) => {
             let hum = reading.hum;
-            led_array.update(&reading);
             hum
         }
         Err(_e) => {
@@ -59,6 +57,31 @@ where
             101.0 // Return the default value on error
         }
     }
+}
+
+// note: generic parameter I implements the i2c::Write trait, and D implements the DelayMs<u8> trait
+fn print_humidity_to_lcd<I, D>(
+    the_lcd: &mut Lcd<I, D>,
+    the_hum: f32,
+    buffer: &mut ryu::Buffer,
+    rounding: u32,
+) -> Result<(), <I as embedded_hal::blocking::i2c::Write>::Error>
+where
+    I: embedded_hal::blocking::i2c::Write,
+    D: embedded_hal::blocking::delay::DelayMs<u8>,
+{
+    the_lcd.set_display(Display::On)?;
+    the_lcd.set_backlight(Backlight::On)?;
+
+    the_lcd.clear()?;
+
+    the_lcd.print("Current Humidity")?;
+
+    the_lcd.set_cursor_position(5, 1)?;
+    the_lcd.print(buffer.format(round_to_decimal(the_hum, rounding)))?;
+    the_lcd.print(" %")?;
+
+    Ok(())
 }
 
 // Main entry point
@@ -115,7 +138,7 @@ fn main() -> ! {
     let sda_pin = pins.gpio18.reconfigure();
     let scl_pin = pins.gpio19.reconfigure();
 
-    // init for embedded hal I2C
+    // I2C inits
     let i2c = hal::I2C::i2c1(
         peripherals.I2C1,
         sda_pin,
@@ -124,15 +147,9 @@ fn main() -> ! {
         &mut peripherals.RESETS,
         &clocks.system_clock,
     );
-
-    // Set up DHT20 sensor
-    // let sensor = Dht20::new(i2c, 0x38, delay);
-    let mut sensor = Dht20::new(i2c, 0x38, &mut delay); // mutable borrow of delay
-
     // Configure two pins as being I²C for LCD SDA/SCL
     let sda_lcd_pin = pins.gpio0.reconfigure();
     let scl_lcd_pin = pins.gpio1.reconfigure();
-
     let mut i2clcd = hal::I2C::i2c0(
         peripherals.I2C0,
         sda_lcd_pin,
@@ -142,32 +159,30 @@ fn main() -> ! {
         &clocks.system_clock,
     );
 
-    // init floating point pass-through variable to copy reading.hum before translating to string to print to LCD
-    let mut the_hum: f32 = 101.0;
-
-    // Buffer is required by ryu to transform a float into a string.
+    // Set up DHT20 sensor
+    // let sensor = Dht20::new(i2c, 0x38, delay);
+    let mut sensor = Dht20::new(i2c, 0x38, &mut delay); // mutable borrow of delay
+                                                        // Buffer is required by ryu to transform a float into a string.
     let mut buffer = ryu::Buffer::new();
     // Allows customized rounding. Humidity sensor precision is 6 digits.
     let rounding: u32 = 1;
 
     // To prevent a return from main()
     loop {
-        the_hum = read_sensor(&mut sensor, &mut led_array, &mut led_pin_led);
+        let the_hum = read_sensor(&mut sensor, &mut led_pin_led);
 
-        // todo: use our components here via the `components` struct
+        // Set up the LCD
+        // todo: I'd like to move this out of the loop, but doing so runs us back into the sensor issues again, so the move of this line will need to be done after we solve the modularization of the sensor
         let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, sensor.delay()).unwrap();
 
-        lcd.set_display(Display::On).unwrap();
-        lcd.set_backlight(Backlight::On).unwrap();
+        // Set the LED array to indicate the humidity level
+        led_array.update(&the_hum);
 
-        lcd.clear().unwrap();
-
-        lcd.print("Current Humidity").unwrap();
-
-        lcd.set_cursor_position(5, 1).unwrap();
-        lcd.print(buffer.format(round_to_decimal(the_hum, rounding)))
-            .unwrap();
-        lcd.print(" %").unwrap();
+        // Print the humidity to the LCD
+        if let Err(_) = print_humidity_to_lcd(&mut lcd, the_hum, &mut buffer, rounding) {
+            // If there is an error printing to the LCD, turn on the onboard LED
+            let _ = led_pin_led.set_high();
+        }
 
         sensor.delay_ms(10000); // sleep 10 seconds between readings
 

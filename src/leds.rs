@@ -1,4 +1,3 @@
-use crate::dht::Reading;
 use embedded_hal::digital::v2::OutputPin;
 use rp_pico::hal::gpio::{
     self,
@@ -62,21 +61,21 @@ impl LedArray {
         self.led_pin_red2.set_low().unwrap();
     }
 
-    // Update the LED array based on a sensor reading
-    pub fn update(&mut self, reading: &Reading) {
-        if reading.hum > 0.0 {
+    // Update the LED array based on the humidity reading
+    pub fn update(&mut self, humidity: &f32) {
+        if *humidity > 0.0 {
             self.led_pin_red.set_high().unwrap();
         }
-        if reading.hum > 20.0 {
+        if *humidity > 20.0 {
             self.led_pin_yellow.set_high().unwrap();
         }
-        if reading.hum > 40.0 {
+        if *humidity > 40.0 {
             self.led_pin_green.set_high().unwrap();
         }
-        if reading.hum > 60.0 {
+        if *humidity > 60.0 {
             self.led_pin_yellow2.set_high().unwrap();
         }
-        if reading.hum > 80.0 {
+        if *humidity > 80.0 {
             self.led_pin_red2.set_high().unwrap();
         }
     }
