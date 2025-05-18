@@ -16,6 +16,7 @@ use embedded_hal::digital::v2::OutputPin;
 mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
 mod leds;
 mod utils;
+mod delay;
 
 use rp_pico::hal;
 use rp_pico::hal::pac;
@@ -112,6 +113,10 @@ fn main() -> ! {
     // The delay object lets us wait for specified amounts of time (in milliseconds)
     let mut delay = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
 
+    let shared_timer = delay::SharedTimer::new(core.SYST, clocks.system_clock.freq().to_Hz());
+    let delay1 = delay::DelayTimer::new(&shared_timer);
+    let delay2 = delay::DelayTimer::new(&shared_timer);
+
     // The single-cycle I/O block controls our GPIO pins
     let sio = hal::Sio::new(peripherals.SIO);
 
@@ -161,7 +166,7 @@ fn main() -> ! {
 
     // Set up DHT20 sensor
     // let sensor = Dht20::new(i2c, 0x38, delay);
-    let mut sensor = Dht20::new(i2c, 0x38, &mut delay); // mutable borrow of delay
+    let mut sensor = Dht20::new(i2c, 0x38, delay1); // mutable borrow of delay
                                                         // Buffer is required by ryu to transform a float into a string.
     let mut buffer = ryu::Buffer::new();
     // Allows customized rounding. Humidity sensor precision is 6 digits.
@@ -173,7 +178,7 @@ fn main() -> ! {
 
         // Set up the LCD
         // todo: I'd like to move this out of the loop, but doing so runs us back into the sensor issues again, so the move of this line will need to be done after we solve the modularization of the sensor
-        let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, sensor.delay()).unwrap();
+        let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, delay2);
 
         // Set the LED array to indicate the humidity level
         led_array.update(&the_hum);
