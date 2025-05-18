@@ -1,5 +1,6 @@
 use crate::board::hal::Clock;
-use crate::leds;
+use crate::delay::DelayTimer;
+use crate::{delay, leds};
 use rp_pico::hal;
 use rp_pico::hal::pac;
 
@@ -8,7 +9,9 @@ use rp_pico::hal::fugit::RateExtU32;
 use rp_pico::hal::gpio::{FunctionI2C, Pin};
 
 // custom adapted dht20 driver import
-use crate::dht::Dht20;
+//use crate::dht::Dht20;
+use dht20::Dht20;
+
 
 use cortex_m::delay::Delay;
 
@@ -17,73 +20,13 @@ use cortex_m::delay::Delay;
 use liquidcrystal_i2c_rs::{Backlight, Display, Lcd};
 static  LCD_ADDRESS: u8 = 0x27;
 
-// ~~~ +++ ~~~ +++ // errata from trying
-
-    // use crate::delay_wrapper::DelayWrapper;
-
-    // use embedded_hal::blocking::delay::DelayNs;
-// use eh1::delay::DelayNs;
-    // use cortex_m::delay::DelayNs;
-    // use embedded_hal::delay::DelayNs;
-
-    // impl DelayNs<u32> for Delay {
-    // impl eh1::delay::DelayNs for cortex_m::delay::Delay {
-    //     fn delay_ns(&mut self, ns: u32) {
-    //         // Convert nanoseconds to microseconds (1 microsecond = 1000 nanoseconds)
-    //         let us = ns / 1000;
-    //         self.delay_us(us);
-    //     }
-    // }
-    // impl DelayNs<u32> for Delay {
-    //     fn delay_ns(&mut self, ns: u32) {
-    //         // Convert nanoseconds to microseconds (1 microsecond = 1000 nanoseconds)
-    //         let us = ns / 1000;
-    //         self.delay_us(us);
-    //     }
-    // }
-
-// use rp_pico::hal::Timer;
-
-// use lcd1602_driver::{
-//     command::{DataWidth, MoveDirection, State},
-//     lcd::{self, Anim, Basic, CGRAMGraph, Ext, ExtRead, FlipStyle, Lcd, MoveStyle},
-//     sender::I2cSender,
-//     utils::BitOps,
-// };
-
-    // use lcd1602_driver::{
-    //     builder::{Builder, BuilderAPI},
-    //     enums::{
-    //         animation::{FlipStyle, MoveStyle},
-    //         basic_command::{Font, LineMode, MoveDirection, ShiftType, State},
-    //     },
-    //     pins::{FourPinsAPI, Pins},
-    //     utils::BitOps,
-    //     LCDAnimation, LCDBasic, LCDExt,
-    // };
-
-    // use lcd1602_rs::LCD1602;
-
-    // const HEART: [u8; 8] = [
-    //     0b00000, 0b00000, 0b01010, 0b11111, 0b01110, 0b00100, 0b00000, 0b00000,
-    // ];
-
-// const HEART: CGRAMGraph = CGRAMGraph {
-//     upper: [
-//         0b00000, 0b00000, 0b01010, 0b11111, 0b01110, 0b00100, 0b00000, 0b00000,
-//     ],
-//     lower: Some([0b00100, 0b01110, 0b00100]),
-// };
-
-// ~~~ +++ ~~~ +++ 
-
 // Abstract the components we'll be using on the board into their own struct
 // This is useful for passing around the components in a single "object"
 // This struct can be expanded to include other components as needed (i.e. our LCD)
     // updated to pass mutable borrowable delay, need to pass from main to possibly fix..
 pub struct BoardComponents<'a> {
     // DHT-20 humidity sensor
-    pub sensor: Dht20<'a,
+    pub sensor: Dht20<
         hal::I2C<
             pac::I2C1,
             (
@@ -91,10 +34,21 @@ pub struct BoardComponents<'a> {
                 Pin<hal::gpio::bank0::Gpio19, FunctionI2C, hal::gpio::PullUp>,
             ),
         >,
-        Delay, 
+        DelayTimer<'a>, 
         // DelayWrapper<'a>,
         // &'a mut Delay, // Borrow DELAY instead of owning it
-        hal::i2c::Error, // compiler requests explicit definition of third argument for I2C error
+        // hal::i2c::Error, // compiler requests explicit definition of third argument for I2C error
+    >,
+
+    pub lcd: Lcd<'a, 
+        hal::I2C<
+            pac::I2C0,
+            (
+                Pin<hal::gpio::bank0::Gpio0, FunctionI2C, hal::gpio::PullUp>,
+                Pin<hal::gpio::bank0::Gpio1, FunctionI2C, hal::gpio::PullUp>,
+            ),
+        >,
+        DelayTimer<'a>,
     >,
 
     // Delay object // errata
@@ -118,6 +72,8 @@ pub struct BoardComponents<'a> {
     pub led_array: leds::LedArray,
     // note: END lines added manually from mjanderson's code during merge. todo: remove this comment line once merge is complete
     // todo: Other peripherals can be added below, such as an LCD
+    
+    pub delay: DelayTimer<'a>,
 }
 // updated to pass mutable borrowable delay, would need to pass delay, pins, and both i2c objects into setup method to possibly fix... 
 impl<'a> BoardComponents<'a> {
@@ -146,7 +102,12 @@ impl<'a> BoardComponents<'a> {
 
         // The delay object lets us wait for specified amounts of time (in milliseconds)
         // update as mutable for borrow
-        let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
+        // let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
+
+        let shared_timer = delay::SharedTimer::new(core.SYST, clocks.system_clock.freq().to_Hz());
+        let sensor_delay = delay::DelayTimer::new(&shared_timer);
+        let mut lcd_delay = delay::DelayTimer::new(&shared_timer);
+        let generic_delay = delay::DelayTimer::new(&shared_timer);
         
         // let mut delay =  <dyn eh1::delay::DelayNs as DelayNs>::cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); 
         // let mut delay = core.SYST.delay(&clocks);
@@ -191,7 +152,7 @@ impl<'a> BoardComponents<'a> {
 
         // Set up DHT20 sensor
         // let sensor = Dht20::new(i2c, 0x38, delay);
-        let sensor = Dht20::new(i2c, 0x38, &mut delay); // borrow the delay as mutable 
+        let sensor = Dht20::new(i2c, 0x38, sensor_delay); // borrow the delay as mutable 
 
         // todo: set up LCD if present on board (and after adding it to the struct)
 
@@ -225,20 +186,22 @@ impl<'a> BoardComponents<'a> {
         // let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, &mut sensor.delay()).unwrap();
         // old attempt implement new library; 
         // let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, &mut delay).unwrap();
-        let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, sensor.delay()).unwrap();
+        let lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, &mut lcd_delay).unwrap();
+        
         // test LCD in place // to remove if Board components is revived to work again
-        lcd.set_display(Display::On).unwrap();
-        lcd.set_backlight(Backlight::On).unwrap();
+        // lcd.set_display(Display::On).unwrap();
+        // lcd.set_backlight(Backlight::On).unwrap();
 
-        lcd.clear().unwrap();
-        lcd.print("Hello World!").unwrap();
+        // lcd.clear().unwrap();
+        // lcd.print("Hello World!").unwrap();
 
         // Return all components in the form of the struct (LCD will need to be added here as well)
         BoardComponents {
             sensor,
-            // lcd, // need to implement in component type struct
+            lcd,
             led_pin_led,
             led_array,
+            delay: generic_delay,
         }
     }
 }

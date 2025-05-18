@@ -1,5 +1,5 @@
 use cortex_m::peripheral::SYST;
-use embedded_hal::blocking::delay::DelayNs;
+use embedded_hal::blocking::delay::DelayMs;
 
 pub struct SharedTimer {
     systick_freq_hz: u32,
@@ -21,7 +21,7 @@ impl SharedTimer {
 
     pub fn now(&self) -> u32 {
         // SysTick counts down, so we invert it for elapsed time comparison
-        u32::MAX - self.systick.current()
+        u32::MAX - SYST::get_current()
     }
 
     pub fn release(self) -> SYST {
@@ -33,11 +33,32 @@ pub struct DelayTimer<'a> {
     timer: &'a SharedTimer,
 }
 
-impl<'a> DelayNs for DelayTimer<'a> {
-    fn delay_ns(&mut self, ns: u32) {
-        let ticks = ns / 1000 * (self.timer.systick_freq_hz / 1_000_000);
+impl<'a> DelayTimer<'a> {
+    pub fn new(timer: &'a SharedTimer) -> Self {
+        Self { timer }
+    }
+}
+
+impl DelayMs<u32> for DelayTimer<'_> {
+    fn delay_ms(&mut self, ms: u32) {
+        let ticks = ms * (self.timer.systick_freq_hz / 1000);
         let start = self.timer.now();
         while self.timer.now().wrapping_sub(start) < ticks {}
     }
 }
 
+impl DelayMs<u16> for DelayTimer<'_> {
+    fn delay_ms(&mut self, ms: u16) {
+        let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
+        let start = self.timer.now();
+        while self.timer.now().wrapping_sub(start) < ticks {}
+    }
+}
+
+impl DelayMs<u8> for DelayTimer<'_> {
+    fn delay_ms(&mut self, ms: u8) {
+        let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
+        let start = self.timer.now();
+        while self.timer.now().wrapping_sub(start) < ticks {}
+    }
+}

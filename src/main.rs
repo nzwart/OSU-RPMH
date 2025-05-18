@@ -12,8 +12,8 @@ use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use embedded_hal::digital::v2::OutputPin;
 
-// mod board; // depreciated for LCD proof-of-concept to enable repeat borrow of delay in main loop
-mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
+mod board;
+// mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
 mod leds;
 mod utils;
 mod delay;
@@ -30,7 +30,8 @@ use crate::utils::round_to_decimal;
 use ryu; // modularize some no-std math out of main
 
 // custom adapted dht20 driver import
-use crate::dht::Dht20;
+// use crate::dht::Dht20;
+use dht20::Dht20;
 
 use cortex_m::delay::Delay;
 
@@ -40,7 +41,7 @@ static LCD_ADDRESS: u8 = 0x27;
 use panic_halt as _;
 
 fn read_sensor<'a, I2C, DELAY, E>(
-    sensor: &mut Dht20<'a, I2C, DELAY, E>,
+    sensor: &mut Dht20<I2C, DELAY>,
     led_pin_led: &mut impl OutputPin,
 ) -> f32
 where
@@ -88,85 +89,7 @@ where
 // Main entry point
 #[entry]
 fn main() -> ! {
-    // local init from Board mod
-    // This is the Pico-specific setup
-    let mut peripherals = pac::Peripherals::take().unwrap();
-    let core = pac::CorePeripherals::take().unwrap();
-
-    // Set up the watchdog driver - needed by the clock setup code
-    let mut watchdog = hal::Watchdog::new(peripherals.WATCHDOG);
-
-    // Configure the clocks
-    // (The default is to generate a 125 MHz system clock)
-    let clocks = hal::clocks::init_clocks_and_plls(
-        rp_pico::XOSC_CRYSTAL_FREQ,
-        peripherals.XOSC,
-        peripherals.CLOCKS,
-        peripherals.PLL_SYS,
-        peripherals.PLL_USB,
-        &mut peripherals.RESETS,
-        &mut watchdog,
-    )
-    .ok()
-    .unwrap();
-
-    // The delay object lets us wait for specified amounts of time (in milliseconds)
-    let mut delay = Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
-
-    let shared_timer = delay::SharedTimer::new(core.SYST, clocks.system_clock.freq().to_Hz());
-    let delay1 = delay::DelayTimer::new(&shared_timer);
-    let delay2 = delay::DelayTimer::new(&shared_timer);
-
-    // The single-cycle I/O block controls our GPIO pins
-    let sio = hal::Sio::new(peripherals.SIO);
-
-    // Set the pins up according to their function on this particular board
-    let pins = rp_pico::Pins::new(
-        peripherals.IO_BANK0,
-        peripherals.PADS_BANK0,
-        sio.gpio_bank0,
-        &mut peripherals.RESETS,
-    );
-
-    // Set the onboard RPP LED to be an output
-    let mut led_pin_led = pins.led.into_push_pull_output();
-    // Initialize an led array with five led pins
-    let mut led_array = leds::LedArray::new(
-        pins.gpio12,
-        pins.gpio13,
-        pins.gpio14,
-        pins.gpio15,
-        pins.gpio16,
-    );
-
-    // Configure two pins as being I²C, not GPIO
-    let sda_pin = pins.gpio18.reconfigure();
-    let scl_pin = pins.gpio19.reconfigure();
-
-    // I2C inits
-    let i2c = hal::I2C::i2c1(
-        peripherals.I2C1,
-        sda_pin,
-        scl_pin,
-        400.kHz(),
-        &mut peripherals.RESETS,
-        &clocks.system_clock,
-    );
-    // Configure two pins as being I²C for LCD SDA/SCL
-    let sda_lcd_pin = pins.gpio0.reconfigure();
-    let scl_lcd_pin = pins.gpio1.reconfigure();
-    let mut i2clcd = hal::I2C::i2c0(
-        peripherals.I2C0,
-        sda_lcd_pin,
-        scl_lcd_pin,
-        100.kHz(),
-        &mut peripherals.RESETS,
-        &clocks.system_clock,
-    );
-
-    // Set up DHT20 sensor
-    // let sensor = Dht20::new(i2c, 0x38, delay);
-    let mut sensor = Dht20::new(i2c, 0x38, delay1); // mutable borrow of delay
+    let mut components = board::BoardComponents::setup_board();
                                                         // Buffer is required by ryu to transform a float into a string.
     let mut buffer = ryu::Buffer::new();
     // Allows customized rounding. Humidity sensor precision is 6 digits.
@@ -174,24 +97,20 @@ fn main() -> ! {
 
     // To prevent a return from main()
     loop {
-        let the_hum = read_sensor(&mut sensor, &mut led_pin_led);
-
-        // Set up the LCD
-        // todo: I'd like to move this out of the loop, but doing so runs us back into the sensor issues again, so the move of this line will need to be done after we solve the modularization of the sensor
-        let mut lcd = Lcd::new(&mut i2clcd, LCD_ADDRESS, delay2);
+        let the_hum = read_sensor(&mut components.sensor, &mut components.led_pin_led);
 
         // Set the LED array to indicate the humidity level
-        led_array.update(&the_hum);
+        components.led_array.update(&the_hum);
 
         // Print the humidity to the LCD
-        if let Err(_) = print_humidity_to_lcd(&mut lcd, the_hum, &mut buffer, rounding) {
+        if let Err(_) = print_humidity_to_lcd(&mut components.lcd, the_hum, &mut buffer, rounding) {
             // If there is an error printing to the LCD, turn on the onboard LED
-            let _ = led_pin_led.set_high();
+            let _ = components.led_pin_led.set_high();
         }
 
-        sensor.delay_ms(10000); // sleep 10 seconds between readings
+        components.delay.delay_ms(10000 as u32); // sleep 10 seconds between readings
 
-        led_array.clear();
+        components.led_array.clear();
     }
 }
 // end of file
