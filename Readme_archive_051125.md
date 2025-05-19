@@ -1,44 +1,22 @@
 ### Rust code
 
 #### General board wiring
-One or more of the four **blue** side rail sections (two per side) should be connected to any ground pins on the Pico (3, 8, 13, 23, 33, or 38).  This allows all devices to use the **blue** side rail as a ground.
+One or more of the four blue side rail sections (two per side) can be connected to any ground pins on the Pico (3, 8, 13, 23, 33, or 38)
 
-The red side rails can be connected to one of the Pico power pins - 3.3v at Pico pin 36 or 5v at Pico pin 40 -
- being careful regarding what devices connect to which power source.
-
-#### Wiring the LCD
-
-The LCD comes with a four pin i2c adapter.  You will connect these pins to the
-Raspberry Pi Pico using four F-M (Female to Male) Dupont wires.
-
-  <img src="docs/f_m_dupont_cable.jpg" alt="AImage of DHT20 humidity sensor" width="250" height="187">
-<br>
-<br>
-
-The LCD's four pin layout is shown in the images below.  Starting at the top:
-  - GND: Ground, connect to ground using blue ground side rail, or to a Pico ground pin*
-  - VCC: 5v power, connect to Pico VBUS (Pico pin 40)
-  - SDA: serial data, connect to GPIO 0 (Pico pin 1)
-  - SCL: clock, connect to GPIO 1 (Pico pin 2)
-
-  *Pico ground pins: 3, 8, 13, 23, 33, or 38
-
-  ![Image of back of the LCD Display, with ic2 adaptor pins](/docs/lcd_pins.jpeg)
-<br>
-<br>
 #### Wiring the DHT20
 
  Facing the dht20's "grated" side with "ASAIR" right above the pins:
  Starting at the far left:
-  - pin 1: power, connect to PICO pin 36(3v) or 40(5v) directly, or by using red rail
+  - pin 1: power, connect to PICO pin 36(3v) or 40(5v) directly, using red rail
   - pin 2: SDA (serial data), connect to GPIO 18 (Pico pin 24)
   - pin 3: Ground, connect to ground using blue ground side rail
   - pin 4: SCL (clock), connect to GPIO 19 (Pico pin 25)
 
   ![Image of DHT20 humidity sensor](/docs/dht20_pins.jpg)
-<br>
-<br>
-#### Wiring the LEDs
+
+_The LED section below can be deleted if not using led bulbs_
+
+#### Wiring LEDs
 The external leds have two wires: the long one is positive, the short one is ground.  The led ground gets wired to the ground "rail" (blue) that ties into a Pico ground pin.  The longer led lead is wired to one of the GPIO pins, using a 220 resistor as the wire.  The code in this repo has the following connections:
 
  - Red to GPIO 15  (Pico pin 20)
@@ -52,7 +30,11 @@ The external leds have two wires: the long one is positive, the short one is gro
 
 _The pins should be side by side in the order shown above (red, yellow, green, yellow2, red2)_
 
-### To Run This Code
+### To Run This Code (from the branch)
+
+To check and run this code, first pull the branch 'emb-hal-i2c-dht20' to your machine
+ - In your (IDE) terminal, run ```git branch --all```.  You will see ```origin/emb-hal-i2c-dht20```
+ - Run ```git checkout emb-hal-i2c-dht20```
 
  - Make sure you have Rust installed in the directory ```rustc --version```
     - if error appears, initialize Rust with ```curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh``` 
@@ -65,13 +47,13 @@ To check this code to make sure it compiles:  navigate to the top level of the w
 
 ```cargo build```   (or ```cargo check```)
 
-To run it, you will plug your Pi Pico to the USB connection with your computer, __holding the "boot selector" button on the Pi Pico down while plugging it in (see image below)__.  You will then be able to see the Pico as a USB device on your machine ```RPI-RP2```.  In your IDE terminal, run:
+To run it, you will plug your Pi Pico to the USB connection with your computer, __holding the "boot selector" button on the Pi Pico down while plugging it in__.  You will then be able to see the Pico as a USB device on your machine ```RPI-RP2```.  In your IDE terminal, run:
 
 ```bash
 cargo run
 ```
 
-You may find your computer generates an error popup, complaining that you "unplugged" the usb device without ejecting.  This appears to be normal and unavoidable. Once the executable transfers, the Pico ejects itself, reboots and runs the program. Just click to close that warning.  
+You may find your computer generates an error popup, complaining that you "unplugged" the usb device without ejecting.  This appears to be normal and unavoidable. Once the executable transfers, the Pico ejects itself, reboots and runs the program. Nothing to worry about.  However, on an apple device, do make sure to close that warning before attempting to download another build.  I think apple prevents a usb from being visible while that warning is on the screen.
 
 **One additional note:** 
 Once you have loaded a program executable onto the Pico, you can re-run the program any time by plugging it into the computer USB or any USB power source without holding down the "boot selector" button.  The program will run automatically.
