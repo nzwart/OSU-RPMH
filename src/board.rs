@@ -64,67 +64,6 @@ impl<'a> BoardComponents<'a> {
     >,
     led_pin_led: Pin<hal::gpio::bank0::Gpio25, hal::gpio::FunctionSioOutput, hal::gpio::PullDown>,
     led_array: leds::LedArray) -> BoardComponents<'a> {
-        // This is the Pico-specific setup
-        // let mut peripherals = pac::Peripherals::take().unwrap();
-        // let core = pac::CorePeripherals::take().unwrap();
-
-        // Set up the watchdog driver - needed by the clock setup code
-        // let mut watchdog = hal::Watchdog::new(peripherals.WATCHDOG);
-
-        // Configure the clocks
-        // (The default is to generate a 125 MHz system clock)
-        // let clocks = hal::clocks::init_clocks_and_plls(
-        //     rp_pico::XOSC_CRYSTAL_FREQ,
-        //     peripherals.XOSC,
-        //     peripherals.CLOCKS,
-        //     peripherals.PLL_SYS,
-        //     peripherals.PLL_USB,
-        //     &mut peripherals.RESETS,
-        //     &mut watchdog,
-        // )
-        // .ok()
-        // .unwrap();
-
-        // The delay object lets us wait for specified amounts of time (in milliseconds)
-        // update as mutable for borrow
-        // let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
-
-        // The single-cycle I/O block controls our GPIO pins
-        // let sio = hal::Sio::new(peripherals.SIO);
-
-        // Set the pins up according to their function on this particular board
-        // let pins = rp_pico::Pins::new(
-        //     peripherals.IO_BANK0,
-        //     peripherals.PADS_BANK0,
-        //     sio.gpio_bank0,
-        //     &mut peripherals.RESETS,
-        // );
-
-        // Set the onboard RPP LED to be an output
-        // let led_pin_led = pins.led.into_push_pull_output();
-        // // Initialize an led array with five led pins
-        // let led_array = leds::LedArray::new(
-        //     pins.gpio12,
-        //     pins.gpio13,
-        //     pins.gpio14,
-        //     pins.gpio15,
-        //     pins.gpio16,
-        // );
-
-        // Configure two pins as being I²C, not GPIO
-        // let sda_pin = pins.gpio18.reconfigure();
-        // let scl_pin = pins.gpio19.reconfigure();
-
-        // init for embedded hal I2C
-        // let i2c = hal::I2C::i2c1(
-        //     peripherals.I2C1,
-        //     sda_pin,
-        //     scl_pin,
-        //     400.kHz(),
-        //     &mut peripherals.RESETS,
-        //     &clocks.system_clock,
-        // );
-
         // Set up DHT20 sensor
         let sensor = Dht20::new(i2c, 0x38, delay); // borrow the delay as mutable 
 
