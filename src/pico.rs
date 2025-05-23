@@ -10,9 +10,9 @@ use rp_pico::hal::gpio::{FunctionI2C, Pin};
 // use rp_pico::hal::I2C;
 
 // custom adapted dht20 driver import
-use crate::dht::Dht20;
+// use crate::dht::Dht20;
 
-use cortex_m::delay::Delay;
+// use cortex_m::delay::Delay;
 // use embedded_hal::blocking::delay::DelayMs;
 
 // Abstract the core components from RPP into their own struct
@@ -80,8 +80,8 @@ impl CoreComponents {
         .unwrap();
 
         // The delay object lets us wait for specified amounts of time (in milliseconds)
-        // update as mutable for borrow
-        let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
+        // update as mutable for borrow // removed mut
+        let delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz()); // updated to compile the Dht mod solution by suhrmosu
 
         // The single-cycle I/O block controls our GPIO pins
         let sio = hal::Sio::new(peripherals.SIO);
@@ -124,7 +124,7 @@ impl CoreComponents {
         let sda_lcd_pin = pins.gpio0.reconfigure(); 
         let scl_lcd_pin = pins.gpio1.reconfigure(); 
 
-        let mut i2clcd = hal::I2C::i2c0(
+        let i2clcd = hal::I2C::i2c0( // removed mut
             peripherals.I2C0,
             sda_lcd_pin,
             scl_lcd_pin,
