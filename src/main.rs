@@ -13,11 +13,16 @@ mod board; // partial redemption for LCD proof-of-concept to enable repeat borro
 mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
 mod leds;
 mod pico;
+mod utils;
 
 use liquidcrystal_i2c_rs::{Backlight, Display, Lcd};
 static  LCD_ADDRESS: u8 = 0x27;
 
+// ryu formats a float as a string, as required by the lcd
+use ryu;
+
 use panic_halt as _;
+use utils::round_to_decimal;
 
 // Main entry point
 #[entry]
@@ -30,6 +35,11 @@ fn main() -> ! {
 
     // init floating point pass-through variable to copy reading.hum before translating to string to print to LCD
     let mut the_hum: f32 = 101.0;
+
+    // Buffer is required by ryu to transform a float into a string
+    let mut buffer = ryu::Buffer::new();
+    // Allows customized rounding.  Humidity sensor reading precision is 6 digits
+    let rounding: u32 = 1;
 
     // To prevent a return from main()
     loop {
@@ -54,7 +64,13 @@ fn main() -> ! {
 
         lcd.clear().unwrap();
     
-        lcd.print("Hello World!").unwrap();
+        lcd.print("Current Humidity").unwrap();
+
+        // Humidity reading placement (col, row): on lower row, centered (for 1
+        //   decimal place precision)
+        lcd.set_cursor_position(5, 1).unwrap();
+        lcd.print(buffer.format(round_to_decimal(the_hum, rounding))).unwrap();
+        lcd.print(" %").unwrap();
 
         // Dht20 sensor crate class now has a delay function appended to it
         components.sensor.delay_ms(10000); // sleep 10 seconds between readings
