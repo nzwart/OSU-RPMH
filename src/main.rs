@@ -1,18 +1,16 @@
 // Compile without standard library
 #![no_std]
 #![no_main]
-#![ allow(unused)]
-// Import HAL crates
-use rp_pico::entry;
-use shared_delay::DelayTimer;
+#![allow(unused)]
+
+use core::fmt;
 
 // HAL traits
-// use embedded_hal::digital::OutputPin; // depreciated due to updated version to utilie embedded-hal = "0.2.7" for mod solution of Delay
-use core::fmt;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::i2c::{Read, Write, WriteRead};
 use embedded_hal::digital::v2::OutputPin;
 
+use rp_pico::entry;
 use rp_pico::hal;
 use rp_pico::hal::pac;
 use rp_pico::hal::prelude::*;
@@ -21,27 +19,22 @@ use rp_pico::hal::prelude::*;
 use rp_pico::hal::fugit::RateExtU32;
 
 // ryu formats a float as a string, as required by the lcd
-use crate::utils::round_to_decimal;
+use OSU_RPMH::utils::round_to_decimal;
 use ryu; // modularize some no-std math out of main
 
 // custom adapted dht20 driver import
-// use crate::dht::Dht20;
 use dht20::Dht20;
-mod board; // partial redemption for LCD proof-of-concept to enable repeat borrow of delay in main loop
-mod dht; // note: the original crate for Dht20 has been replicated (forked) locally to modify for parallel calls to Delay. This import (src/dht.rs) is our custom variation
-mod leds;
-mod pico;
-mod utils;
-mod shared_delay;
-// use crate::dht::Dht20;
 
-
+// LCD imports
 use liquidcrystal_i2c_rs::{Backlight, Display, Lcd};
 static LCD_ADDRESS: u8 = 0x27;
 
 use panic_halt as _;
 
-// ~~ Thanks Nic!
+use OSU_RPMH::shared_delay::DelayTimer;
+use OSU_RPMH::pico;
+use OSU_RPMH::board;
+
 fn read_sensor<'a, I2C, DELAY, E>(
     sensor: &mut Dht20<I2C, DELAY>,
     led_pin_led: &mut impl OutputPin,
@@ -95,7 +88,7 @@ fn main() -> ! {
     let mut rpp_core = pico::CoreComponents::setup_board();
     
     // Set up the board and get all components via our struct; partial fix to redeem board components mod struct
-    let mut components = board::BoardComponents::setup_board(&rpp_core.shared_timer, rpp_core.i2c, rpp_core.led_pin_led, rpp_core.led_array);
+    let mut components = board::BoardComponents::setup_board(&rpp_core.shared_timer, rpp_core.sensor_i2c, rpp_core.led_pin_led, rpp_core.led_array);
 
     // init floating point pass-through variable to copy reading.hum before translating to string to print to LCD
     let mut the_hum: f32 = 101.0;
@@ -110,16 +103,7 @@ fn main() -> ! {
         // sensor.read will produce two f32 values: reading.hum and reading.temp
         // parse the sensor reading
         the_hum = read_sensor(&mut components.sensor, &mut components.led_pin_led);
-        // match components.sensor.read() {
-        //     Ok(reading) => {
-        //         the_hum = reading.hum;
-        //         components.led_array.update(reading);
-        //     }
-        //     Err(_e) => {
-        //         components.led_pin_led.set_high().unwrap();
-        //         // error!("Error reading sensor: {e:?}");
-        //     }
-        // }
+
         // Set the LED array to indicate the humidity level
         components.led_array.update(&the_hum);
 
