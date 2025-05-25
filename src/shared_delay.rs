@@ -1,6 +1,8 @@
 use cortex_m::peripheral::SYST;
 use embedded_hal::blocking::delay::DelayMs;
 
+// SharedTimer is an abstraction of the internal Pico clock that can be used
+// to create reusable DelayTimers
 pub struct SharedTimer {
     systick_freq_hz: u32,
     systick: SYST,
@@ -29,6 +31,9 @@ impl SharedTimer {
     }
 }
 
+// DelayTimer is a Delay-like implementation that wraps the Pico clock.
+// You can create multiple DelayTimer instances from the same SharedTimer without
+// issue (and therefore avoid shared delay issues)
 pub struct DelayTimer<'a> {
     timer: &'a SharedTimer,
 }
@@ -39,6 +44,8 @@ impl<'a> DelayTimer<'a> {
     }
 }
 
+// Several different implementations for delay_ms to allow operation
+// with varying interfaces from the different crates we are using
 impl DelayMs<u32> for DelayTimer<'_> {
     fn delay_ms(&mut self, ms: u32) {
         let ticks = ms * (self.timer.systick_freq_hz / 1000);
@@ -60,5 +67,33 @@ impl DelayMs<u8> for DelayTimer<'_> {
         let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
         let start = self.timer.now();
         while self.timer.now().wrapping_sub(start) < ticks {}
+    }
+}
+
+impl DelayMs<u8> for &mut DelayTimer<'_> {
+    fn delay_ms(&mut self, ms: u8) {
+        let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
+        let start = self.timer.now();
+        while self.timer.now().wrapping_sub(start) < ticks {}
+    }
+}
+
+// Ownership issues require the delays to be created and owned outside the
+// rpp_core and components structs in main. This Delays struct creates
+// a convenient data structure for accessing them
+pub struct Delays<'a> {
+    pub lcd_delay: DelayTimer<'a>,
+    pub generic_delay: DelayTimer<'a>,
+}
+
+impl<'a> Delays<'a> {
+    pub fn new(shared_timer: &'a SharedTimer) -> Self {
+        let lcd_delay = DelayTimer::new(shared_timer);
+        let generic_delay = DelayTimer::new(shared_timer);
+
+        return Delays {
+            lcd_delay,
+            generic_delay,
+        }
     }
 }

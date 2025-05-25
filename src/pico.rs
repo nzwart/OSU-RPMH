@@ -7,7 +7,7 @@ use rp_pico::hal::fugit::RateExtU32;
 use rp_pico::hal::gpio::{FunctionI2C, Pin};
 
 use crate::leds;
-use crate::shared_delay::SharedTimer;
+use crate::shared_delay::{SharedTimer};
 
 // Abstract the core components from RPP into their own struct
 pub struct CoreComponents {

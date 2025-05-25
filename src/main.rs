@@ -31,7 +31,7 @@ static LCD_ADDRESS: u8 = 0x27;
 
 use panic_halt as _;
 
-use OSU_RPMH::shared_delay::DelayTimer;
+use OSU_RPMH::shared_delay::{self, DelayTimer};
 use OSU_RPMH::pico;
 use OSU_RPMH::board;
 
@@ -86,9 +86,18 @@ where
 fn main() -> ! {
     // This is the Pico-specific setup, now abstracted, away from component init for mutable borrow
     let mut rpp_core = pico::CoreComponents::setup_board();
+
+    let mut delays = shared_delay::Delays::new(&rpp_core.shared_timer);
     
     // Set up the board and get all components via our struct; partial fix to redeem board components mod struct
-    let mut components = board::BoardComponents::setup_board(&rpp_core.shared_timer, rpp_core.sensor_i2c, rpp_core.led_pin_led, rpp_core.led_array);
+    let mut components = board::BoardComponents::setup_board(
+        &rpp_core.shared_timer, 
+        rpp_core.sensor_i2c, 
+        &mut rpp_core.i2clcd, 
+        &mut delays.lcd_delay,
+        rpp_core.led_pin_led, 
+        rpp_core.led_array,
+    );
 
     // init floating point pass-through variable to copy reading.hum before translating to string to print to LCD
     let mut the_hum: f32 = 101.0;
@@ -107,13 +116,9 @@ fn main() -> ! {
         // Set the LED array to indicate the humidity level
         components.led_array.update(&the_hum);
 
-        let mut lcd_delay = DelayTimer::new(&rpp_core.shared_timer);
-
-        // use our components here via the `components` struct
-        let mut lcd = Lcd::new(&mut rpp_core.i2clcd, LCD_ADDRESS, &mut lcd_delay).unwrap();
 
         // Print the humidity to the LCD
-        if let Err(_) = print_humidity_to_lcd(&mut lcd, the_hum, &mut buffer, rounding) {
+        if let Err(_) = print_humidity_to_lcd(&mut components.lcd, the_hum, &mut buffer, rounding) {
             // If there is an error printing to the LCD, turn on the onboard LED
             let _ = components.led_pin_led.set_high();
         }
@@ -131,7 +136,7 @@ fn main() -> ! {
         // lcd.print(" %").unwrap();
 
         // Dht20 sensor crate class now has a delay function appended to it
-        components.delay.delay_ms(10000 as u32); // sleep 10 seconds between readings
+        delays.generic_delay.delay_ms(10000 as u32); // sleep 10 seconds between readings
 
         // reset LEDs to off
         components.led_array.clear();
