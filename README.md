@@ -77,3 +77,11 @@ You may find your computer generates an error popup, complaining that you "unplu
 Once you have loaded a program executable onto the Pico, you can re-run the program any time by plugging it into the computer USB or any USB power source without holding down the "boot selector" button.  The program will run automatically.
 
 ![Image of Raspberry Pi Pico board with pin connections](/docs/pico_pinout.jpg)
+
+### Testing
+
+This project has several testing scripts that can be used to verify the correct functioning of each of the project components both individually and collectively. To run the testing scripts, connect the Raspberry Pi Pico using the connection process described above, and execute `cargo run --bin \[script name without file extension\]`. For example, to run the test script for the led array, execute `cargo run --bin led_test`. The expected functionality for each test script is described in the script file (found in the `bin` directory).
+
+Currently available test scripts:
+- `led_test.rs`
+- `sensor_test.rs`
