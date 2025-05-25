@@ -4,7 +4,7 @@
 
 use rp_pico::entry;
 use embedded_hal::digital::v2::OutputPin;
-use OSU_RPMH::board::BoardComponents;
+use OSU_RPMH::{board::BoardComponents, pico};
 use panic_halt as _;
 use OSU_RPMH::board;
 
@@ -28,8 +28,10 @@ fn blink(components: &mut BoardComponents, n: u32) {
 #[entry]
 fn main() -> ! {
 
+    let mut rpp_core = pico::CoreComponents::setup_board();
+
     // Set up the board and get all components via our struct
-    let mut components = board::BoardComponents::setup_board();
+    let mut components = board::BoardComponents::setup_board(&mut rpp_core.delay, rpp_core.i2c, rpp_core.led_pin_led, rpp_core.led_array);
 
     loop {
         components.led_pin_led.set_low().unwrap();
