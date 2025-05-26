@@ -10,6 +10,14 @@ use liquidcrystal_i2c_rs::{Backlight, Display};
 
 use embedded_hal::blocking::delay::DelayMs;
 
+/*
+    Tests the functionality of 1602 LCD display. If operating normally, the LCD will
+    display the message "Testing" on the first line and "55.3 %" on the second line. 
+    This output demonstrates that the LCD can display arbitrary data and that
+    it is rounding data correctly.
+    
+    To run the test program, use the command $cargo run --bin lcd_test
+*/
 #[entry]
 fn main() -> ! {
     let mut rpp_core = pico::CoreComponents::setup_board();
