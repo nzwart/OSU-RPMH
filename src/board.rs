@@ -29,17 +29,6 @@ pub struct BoardComponents<'a> {
         DelayTimer<'a>, 
     >,
 
-    pub lcd: Lcd<'a, 
-        hal::I2C<
-            pac::I2C0,
-            (
-                Pin<hal::gpio::bank0::Gpio0, FunctionI2C, hal::gpio::PullUp>,
-                Pin<hal::gpio::bank0::Gpio1, FunctionI2C, hal::gpio::PullUp>,
-            ),
-        >,
-        DelayTimer<'a>,
-    >,
-
     // LED Outputs
     // note: we're using PullDown to match what into_push_pull_output()
     //   returns, as we need to explicitly specify all generic type
@@ -54,9 +43,17 @@ pub struct BoardComponents<'a> {
     // A struct containing all indicator LEDs and methods to control their behavior
     pub led_array: leds::LedArray,
     
-    // todo: Other peripherals can be added below, such as an LCD
-    
-    pub delay: DelayTimer<'a>,
+    // 1602 LCD visual display
+    pub lcd: Lcd<'a, 
+        hal::I2C<
+            pac::I2C0,
+            (
+                Pin<hal::gpio::bank0::Gpio0, FunctionI2C, hal::gpio::PullUp>,
+                Pin<hal::gpio::bank0::Gpio1, FunctionI2C, hal::gpio::PullUp>,
+            ),
+        >,
+        DelayTimer<'a>,
+    >,
 }
 
 impl<'a> BoardComponents<'a> {
@@ -89,15 +86,12 @@ impl<'a> BoardComponents<'a> {
         // Set up LCD 
         let lcd = Lcd::new(lcd_i2c, LCD_ADDRESS, lcd_delay).unwrap();
 
-        let generic_delay = DelayTimer::new(&shared_timer);
-
         // Return all components in the form of the struct (LCD will need to be added here as well)
         BoardComponents {
             sensor,
             lcd,
             led_pin_led,
             led_array,
-            delay: generic_delay,
         }
     }
 }

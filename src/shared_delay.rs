@@ -46,33 +46,14 @@ impl<'a> DelayTimer<'a> {
 
 // Several different implementations for delay_ms to allow operation
 // with varying interfaces from the different crates we are using
-impl DelayMs<u32> for DelayTimer<'_> {
-    fn delay_ms(&mut self, ms: u32) {
-        let ticks = ms * (self.timer.systick_freq_hz / 1000);
-        let start = self.timer.now();
-        while self.timer.now().wrapping_sub(start) < ticks {}
-    }
-}
-
-impl DelayMs<u16> for DelayTimer<'_> {
-    fn delay_ms(&mut self, ms: u16) {
-        let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
-        let start = self.timer.now();
-        while self.timer.now().wrapping_sub(start) < ticks {}
-    }
-}
-
-impl DelayMs<u8> for DelayTimer<'_> {
-    fn delay_ms(&mut self, ms: u8) {
-        let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
-        let start = self.timer.now();
-        while self.timer.now().wrapping_sub(start) < ticks {}
-    }
-}
-
-impl DelayMs<u8> for &mut DelayTimer<'_> {
-    fn delay_ms(&mut self, ms: u8) {
-        let ticks = ms as u32 * (self.timer.systick_freq_hz / 1000);
+impl<T> DelayMs<T> for DelayTimer<'_> 
+where 
+    T: TryInto<u32>,
+    T::Error: core::fmt::Debug,
+{
+    fn delay_ms(&mut self, ms: T) {
+        let ms: u32 = ms.try_into().unwrap();
+        let ticks = ms * (self.timer.systick_freq_hz / 100000);
         let start = self.timer.now();
         while self.timer.now().wrapping_sub(start) < ticks {}
     }
