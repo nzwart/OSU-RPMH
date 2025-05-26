@@ -4,38 +4,48 @@
 
 use embedded_hal::digital::v2::OutputPin;
 use rp_pico::entry;
-use OSU_RPMH::{board, pico, utils::round_to_decimal};
+use OSU_RPMH::{board, pico, shared_delay, utils::round_to_decimal};
 
-use liquidcrystal_i2c_rs::{Backlight, Display, Lcd};
-static LCD_ADDRESS: u8 = 0x27;
+use liquidcrystal_i2c_rs::{Backlight, Display};
+
+use embedded_hal::blocking::delay::DelayMs;
 
 #[entry]
 fn main() -> ! {
     let mut rpp_core = pico::CoreComponents::setup_board();
 
-    let mut components = board::BoardComponents::setup_board(&mut rpp_core.delay, rpp_core.i2c, rpp_core.led_pin_led, rpp_core.led_array);
+    let mut delays = shared_delay::Delays::new(&rpp_core.shared_timer);
+
+    let mut components = board::BoardComponents::setup_board(
+        &rpp_core.shared_timer, 
+        rpp_core.sensor_i2c, 
+        &mut rpp_core.i2clcd,
+        &mut delays.lcd_delay,
+        rpp_core.led_pin_led, 
+        rpp_core.led_array
+    );
 
     let mut buffer = ryu::Buffer::new();
     let rounding: u32 = 1;
 
     loop {
+        delays.generic_delay.delay_ms(500);
+        
         components.led_pin_led.set_high().unwrap();
 
-        let mut lcd = Lcd::new(&mut rpp_core.i2clcd, LCD_ADDRESS, components.sensor.delay()).unwrap();
+        components.lcd.set_display(Display::On).unwrap();
+        components.lcd.set_backlight(Backlight::On).unwrap();
+        components.lcd.clear().unwrap();
+        components.lcd.print("Testing").unwrap();
 
-        lcd.set_display(Display::On).unwrap();
-        lcd.set_backlight(Backlight::On).unwrap();
-        lcd.clear().unwrap();
-        lcd.print("Testing").unwrap();
+        components.lcd.set_cursor_position(5, 1).unwrap();
+        components.lcd.print(buffer.format(round_to_decimal(55.32, rounding))).unwrap();
+        components.lcd.print(" %").unwrap();
 
-        lcd.set_cursor_position(5, 1).unwrap();
-        lcd.print(buffer.format(round_to_decimal(55.32, rounding))).unwrap();
-        lcd.print(" %").unwrap();
-
-        components.sensor.delay_ms(10000);
+        delays.generic_delay.delay_ms(10000);
 
         components.led_pin_led.set_low().unwrap();
 
-        components.sensor.delay_ms(1000);
+        delays.generic_delay.delay_ms(1000);
     }
 }
