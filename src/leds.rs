@@ -1,4 +1,3 @@
-// use crate::dht::Reading;
 use embedded_hal::digital::v2::OutputPin;
 use rp_pico::hal::gpio::{
     self,
