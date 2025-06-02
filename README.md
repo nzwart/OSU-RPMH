@@ -85,3 +85,5 @@ This project has several testing scripts that can be used to verify the correct 
 Currently available test scripts:
 - `led_test.rs`
 - `sensor_test.rs`
+- `lcd_test.rs`
+- `all_components_test.rs`

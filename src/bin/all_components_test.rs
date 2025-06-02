@@ -32,12 +32,11 @@ where
 }
 
 /*
-    Tests the functionality of 1602 LCD display. If operating normally, the LCD will
-    display the message "Testing" on the first line and "55.3 %" on the second line. 
-    This output demonstrates that the LCD can display arbitrary data and that
-    it is rounding data correctly.
+    Tests the functionality of all components. If operating normally, the LCD will
+    display a positive message for each components (NOTE: the LEDs will have to
+    be inspected visually).
     
-    To run the test program, use the command $cargo run --bin lcd_test
+    To run the test program, use the command $cargo run --bin all_components_test
 */
 #[entry]
 fn main() -> ! {
